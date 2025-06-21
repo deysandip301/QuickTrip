@@ -65,15 +65,14 @@ const dijkstra = (startIndex, places, distanceMatrix, preferences) => {
       const edgeData = distanceMatrix.rows[u].elements[v];
       if (edgeData.status !== 'OK') continue;
       
-      const travelTime = edgeData.duration.value / 60; // in minutes
+      const travelDistance = edgeData.distance.value; // in meters - prioritize distance over time
       const destinationPlace = places[v];
       
-      // The "cost" function: a blend of time and preference mismatch.
-      const isPreferred = Object.keys(preferences).some(p => preferences[p] && destinationPlace.types.includes(p));
-      const preferencePenalty = isPreferred ? 0 : 50; // Heavy penalty for non-preferred types
-      const ratingPenalty = (5 - destinationPlace.rating) * 10; // Penalize lower-rated places
+      // Simplified cost function focusing on distance with small rating bonus
+      const ratingBonus = (destinationPlace.rating || 3) * 100; // Small bonus for higher ratings
+      const preferenceBonus = Object.keys(preferences).some(p => preferences[p] && destinationPlace.types.includes(p)) ? 200 : 0;
 
-      const weight = travelTime + preferencePenalty + ratingPenalty;
+      const weight = travelDistance - ratingBonus - preferenceBonus; // Lower is better
       const newDist = distances[u] + weight;
 
       if (newDist < distances[v]) {
@@ -87,158 +86,117 @@ const dijkstra = (startIndex, places, distanceMatrix, preferences) => {
 };
 
 /**
- * Reconstructs the path and finds the best journey that fits time and budget constraints.
- * Enhanced to create longer, more diverse journeys.
+ * Optimized route creation using nearest neighbor with Dijkstra's shortest paths
+ * This ensures minimum total distance by always visiting the nearest unvisited place
+ */
+const createOptimalRoute = (places, distanceMatrix, startIndex, maxDuration, maxBudget, preferences) => {
+  console.log(`🎯 Creating optimal route starting from: ${places[startIndex].name}`);
+  
+  const visited = new Set([startIndex]);
+  const route = [places[startIndex]];
+  let currentIndex = startIndex;
+  let totalTime = places[startIndex].estimatedVisitDuration || 30;
+  let totalCost = places[startIndex].estimatedCost || 0;
+  let totalDistance = 0;
+  
+  console.log(`📍 All available places (${places.length}):`);
+  places.forEach((place, idx) => {
+    console.log(`  ${idx}: ${place.name} (Rating: ${place.rating}, Types: ${place.types.slice(0, 2).join(', ')})`);
+  });
+  
+  // Continue until we can't add more places
+  while (visited.size < places.length) {
+    let nearestIndex = -1;
+    let shortestDistance = Infinity;
+    let nearestTravelTime = 0;
+    let nearestPlace = null;
+    
+    // Find the nearest unvisited place using actual distance matrix
+    for (let i = 0; i < places.length; i++) {
+      if (visited.has(i)) continue;
+      
+      const travelData = distanceMatrix.rows[currentIndex]?.elements[i];
+      if (!travelData || travelData.status !== 'OK') continue;
+      
+      const travelDistance = travelData.distance.value; // meters
+      const travelTime = travelData.duration.value / 60; // minutes
+      const candidate = places[i];
+      const visitTime = candidate.estimatedVisitDuration || 30;
+      const visitCost = candidate.estimatedCost || 0;
+      
+      // Check if we can afford this place (time and budget)
+      const projectedTime = totalTime + travelTime + visitTime;
+      const projectedCost = totalCost + visitCost;
+      
+      if (projectedTime > maxDuration || projectedCost > maxBudget) {
+        continue;
+      }
+      
+      // Apply small preference bonus to distance calculation
+      let adjustedDistance = travelDistance;
+      const isPreferred = Object.keys(preferences).some(p => preferences[p] && candidate.types.includes(p));
+      const hasGoodRating = (candidate.rating || 0) >= 4.0;
+      
+      if (isPreferred) adjustedDistance *= 0.9; // 10% distance bonus for preferred types
+      if (hasGoodRating) adjustedDistance *= 0.95; // 5% distance bonus for high ratings
+      
+      // Choose the place with minimum adjusted distance (nearest neighbor)
+      if (adjustedDistance < shortestDistance) {
+        shortestDistance = adjustedDistance;
+        nearestIndex = i;
+        nearestTravelTime = travelTime;
+        nearestPlace = candidate;
+      }
+    }
+    
+    // If no valid next place found, break
+    if (nearestIndex === -1) {
+      console.log(`🚫 No more reachable places within constraints. Route complete with ${route.length} places.`);
+      break;
+    }
+    
+    // Add the nearest place to the route
+    const travelData = distanceMatrix.rows[currentIndex].elements[nearestIndex];
+    
+    route.push(nearestPlace);
+    visited.add(nearestIndex);
+    
+    totalTime += nearestTravelTime + (nearestPlace.estimatedVisitDuration || 30);
+    totalCost += nearestPlace.estimatedCost || 0;
+    totalDistance += travelData.distance.value;
+    currentIndex = nearestIndex;
+    
+    console.log(`✅ Added: ${nearestPlace.name}`);
+    console.log(`   Distance from previous: ${(travelData.distance.value / 1000).toFixed(2)} km`);
+    console.log(`   Total time: ${totalTime.toFixed(1)} min, Total cost: ₹${totalCost}, Total distance: ${(totalDistance / 1000).toFixed(2)} km`);
+  }
+  
+  console.log(`🎉 Optimal route created: ${route.length} places, Total distance: ${(totalDistance / 1000).toFixed(2)} km`);
+  return { route, totalTime, totalCost, totalDistance };
+};
+
+/**
+ * Finds the optimal journey using the improved nearest neighbor algorithm
+ * This ensures minimum total distance by visiting places in optimal order
  */
 const findOptimalJourney = (places, placeMap, distances, previous, startIndex, maxDuration, maxBudget, distanceMatrix) => {
-    console.log(`Finding optimal journey with startIndex: ${startIndex}, maxDuration: ${maxDuration}, maxBudget: ${maxBudget}`);
-    console.log(`Total places: ${places.length}`);
+    console.log(`🎯 Finding optimal journey with startIndex: ${startIndex}, maxDuration: ${maxDuration}, maxBudget: ${maxBudget}`);
+    console.log(`📊 Total places available: ${places.length}`);
+      // Create optimal route using nearest neighbor with distance optimization
+    const routeResult = createOptimalRoute(places, distanceMatrix, startIndex, maxDuration, maxBudget, preferences);
     
-    let bestJourney = [];
-    let bestJourneyScore = -1;
-
-    // Try to create a comprehensive journey by following the shortest path tree
-    // but also considering multiple branches for variety
-    const createGreedyJourney = () => {
-        const visited = new Set();
-        const journey = [places[startIndex]];
-        visited.add(startIndex);
-        
-        let currentIndex = startIndex;
-        let totalTime = places[startIndex].estimatedVisitDuration || 30; // Reduced halt time from 45 to 30 minutes
-        let totalCost = places[startIndex].estimatedCost || 20;
-        
-        console.log(`Starting greedy journey from: ${places[startIndex].name}`);
-        
-        while (journey.length < Math.min(places.length, 12)) { // Increased to allow up to 12 places for longer journeys
-            let bestNext = -1;
-            let bestScore = Infinity;
-            
-            // Find the best unvisited place to go next
-            for (let i = 0; i < places.length; i++) {
-                if (visited.has(i)) continue;
-                
-                const candidate = places[i];
-                const travelData = distanceMatrix.rows[currentIndex]?.elements[i];
-                
-                if (!travelData || travelData.status !== 'OK') continue;
-                
-                const travelTime = travelData.duration.value / 60; // minutes
-                const visitTime = candidate.estimatedVisitDuration || 15; // Reduced halt time
-                const visitCost = candidate.estimatedCost || 20;
-                
-                const projectedTime = totalTime + travelTime + visitTime;
-                const projectedCost = totalCost + visitCost;
-                
-                // Check if we can afford this place
-                if (projectedTime > maxDuration || projectedCost > maxBudget) {
-                    continue;
-                }
-                
-                // Score based on distance, rating, and variety
-                const distanceScore = distances[i] || Infinity;
-                const ratingBonus = (candidate.rating || 3) * 10;
-                const varietyBonus = getVarietyBonus(candidate, journey);
-                
-                const score = distanceScore - ratingBonus - varietyBonus;
-                
-                if (score < bestScore) {
-                    bestScore = score;
-                    bestNext = i;
-                }
-            }
-            
-            if (bestNext === -1) {
-                console.log(`No more reachable places. Journey has ${journey.length} stops.`);
-                break;
-            }
-            
-            // Add the best next place
-            const nextPlace = places[bestNext];
-            const travelData = distanceMatrix.rows[currentIndex].elements[bestNext];
-            const travelTime = travelData.duration.value / 60;
-            
-            journey.push(nextPlace);
-            visited.add(bestNext);
-            
-            totalTime += travelTime + (nextPlace.estimatedVisitDuration || 15); // Reduced halt time
-            totalCost += nextPlace.estimatedCost || 20;
-            currentIndex = bestNext;
-            
-            console.log(`Added: ${nextPlace.name} (Total time: ${totalTime.toFixed(1)}min, cost: ${totalCost})`);
-        }
-        
-        return { journey, totalTime, totalCost };
-    };
-    
-    // Helper function to give bonus for place type variety
-    const getVarietyBonus = (candidate, currentJourney) => {
-        const journeyTypes = new Set();
-        currentJourney.forEach(place => {
-            place.types.forEach(type => journeyTypes.add(type));
-        });
-        
-        const newTypes = candidate.types.filter(type => !journeyTypes.has(type));
-        return newTypes.length * 20; // Bonus for adding new types
-    };
-    
-    // Create the greedy journey
-    const greedyResult = createGreedyJourney();
-    
-    if (greedyResult.journey.length > 1) {
-        console.log(`✅ Greedy journey created with ${greedyResult.journey.length} places`);
-        bestJourney = greedyResult.journey;
-        bestJourneyScore = greedyResult.journey.length;
+    if (routeResult.route.length === 0) {
+        console.log('❌ No valid route found');
+        return [];
     }
     
-    // Also try some traditional Dijkstra paths as alternatives
-    for (let i = 0; i < Math.min(places.length, 5); i++) {
-        if (i === startIndex) continue;
-        
-        const path = [];
-        let currentNodeIndex = i;
-        while (currentNodeIndex !== null && currentNodeIndex !== undefined) {
-            path.unshift(places[currentNodeIndex]);
-            currentNodeIndex = previous[currentNodeIndex];
-        }
-
-        if (path.length === 0 || path[0].placeId !== places[startIndex].placeId) {
-            continue;
-        }
-
-        let currentTotalTime = 0;
-        let currentTotalCost = 0;
-
-        for (let j = 0; j < path.length; j++) {
-            const stop = path[j];
-            currentTotalTime += stop.estimatedVisitDuration || 15; // Reduced halt time
-            currentTotalCost += stop.estimatedCost || 20;
-
-            if (j > 0) {
-                const prevStopIndex = places.findIndex(p => p.placeId === path[j-1].placeId);
-                const currentStopIndex = places.findIndex(p => p.placeId === stop.placeId);
-                
-                if (distanceMatrix.rows[prevStopIndex] && distanceMatrix.rows[prevStopIndex].elements[currentStopIndex]) {
-                    const leg = distanceMatrix.rows[prevStopIndex].elements[currentStopIndex];
-                    const travelTimeMinutes = leg.duration.value / 60;
-                    currentTotalTime += travelTimeMinutes;
-                }
-            }
-        }
-        
-        if (currentTotalTime <= maxDuration && currentTotalCost <= maxBudget) {
-            if (path.length > bestJourneyScore) {
-                bestJourneyScore = path.length;
-                bestJourney = path;
-                console.log(`✅ Found better Dijkstra path with ${path.length} places`);
-            }
-        }
-    }
+    console.log(`✅ Optimal route found with ${routeResult.route.length} places:`);
+    routeResult.route.forEach((place, index) => {
+        console.log(`  ${index + 1}. ${place.name} (Rating: ${place.rating}, Types: ${place.types.slice(0, 2).join(', ')})`);
+    });
     
-    console.log(`Best journey found:`, bestJourney.map(p => p.name));
-    
-    // Add travel details to the final journey for frontend display
-    return addTravelDetailsToJourney(bestJourney, distanceMatrix, places);
+    // Add travel details to the journey for frontend display
+    return addTravelDetailsToJourney(routeResult.route, distanceMatrix, places);
 };
 
 
@@ -518,7 +476,7 @@ const findOptimalJourneyWithRoute = (places, placeMap, startIndex, endIndex, max
 
 /**
  * Creates a circular journey starting and ending at the current location
- * Optimized for exploring places around a central point
+ * Uses optimal nearest neighbor algorithm for minimum total distance
  */
 const createCircularJourney = async (places, preferences, maxDuration, maxBudget, startPoint, distanceMatrix) => {
   console.log('🔄 Creating circular journey from current location');
@@ -527,131 +485,92 @@ const createCircularJourney = async (places, preferences, maxDuration, maxBudget
   const startNodeIndex = findNearestPlace(places, startPoint);
   const startPlace = places[startNodeIndex];
   
-  console.log(`Starting from: ${startPlace.name}`);
+  console.log(`🏁 Starting circular journey from: ${startPlace.name}`);
+    // Create optimal route using nearest neighbor algorithm
+  const routeResult = createOptimalRoute(places, distanceMatrix, startNodeIndex, maxDuration * 0.85, maxBudget, preferences);
   
-  // Create a greedy journey that explores nearby places and returns to start
-  const visited = new Set([startNodeIndex]);
-  const journey = [{
-    ...startPlace,
-    isStartPoint: true,
-    visitOrder: 1
-  }];
-  
-  let currentIndex = startNodeIndex;
-  let totalTime = startPlace.estimatedVisitDuration || 30;
-  let totalCost = startPlace.estimatedCost || 20;
-  let visitOrder = 2;
-  
-  // Continue adding places until we run out of time or budget
-  while (visited.size < Math.min(places.length, 10)) { // Max 10 places for a good circular journey
-    let bestNext = -1;
-    let bestScore = Infinity;
-    
-    // Find the best unvisited place
-    for (let i = 0; i < places.length; i++) {
-      if (visited.has(i)) continue;
-      
-      const candidate = places[i];
-      const travelData = distanceMatrix.rows[currentIndex]?.elements[i];
-      const returnData = distanceMatrix.rows[i]?.elements[startNodeIndex]; // Travel back to start
-      
-      if (!travelData || travelData.status !== 'OK' || !returnData || returnData.status !== 'OK') continue;
-      
-      const travelTime = travelData.duration.value / 60; // minutes
-      const returnTime = returnData.duration.value / 60; // minutes to get back to start
-      const visitTime = candidate.estimatedVisitDuration || 30;
-      const visitCost = candidate.estimatedCost || 20;
-      
-      // Check if we can visit this place and still return to start
-      const projectedTime = totalTime + travelTime + visitTime + returnTime;
-      const projectedCost = totalCost + visitCost;
-      
-      if (projectedTime > maxDuration || projectedCost > maxBudget) {
-        continue;
-      }
-      
-      // Score based on rating, distance, and preference match
-      const distanceScore = travelTime; // Prefer closer places
-      const ratingBonus = (candidate.rating || 3) * 20;
-      const preferenceBonus = getPreferenceScore(candidate, preferences) * 30;
-      
-      const score = distanceScore - ratingBonus - preferenceBonus;
-      
-      if (score < bestScore) {
-        bestScore = score;
-        bestNext = i;
-      }
-    }
-    
-    if (bestNext === -1) {
-      console.log(`No more reachable places for circular journey. Current stops: ${journey.length}`);
-      break;
-    }
-    
-    // Add the next place
-    const nextPlace = places[bestNext];
-    const travelData = distanceMatrix.rows[currentIndex].elements[bestNext];
-    const travelTime = travelData.duration.value / 60;
-      // Add travel leg
-    journey.push({
-      isTravelLeg: true,
-      from: places[currentIndex].name,
-      to: nextPlace.name,
-      duration: travelData.duration.text || `${Math.round(travelTime)} min`,
-      distance: travelData.distance.text,
-      mode: 'driving'
-    });
-    
-    // Add the place
-    journey.push({
-      ...nextPlace,
-      visitOrder: visitOrder++,
-      arrivalTime: totalTime + travelTime
-    });
-    
-    visited.add(bestNext);
-    totalTime += travelTime + (nextPlace.estimatedVisitDuration || 30);
-    totalCost += nextPlace.estimatedCost || 20;
-    currentIndex = bestNext;
-    
-    console.log(`Added: ${nextPlace.name} (Total time: ${totalTime.toFixed(1)}min, cost: ₹${totalCost})`);
+  if (routeResult.route.length === 0) {
+    console.log('❌ Could not create circular journey');
+    return [];
   }
   
-  // Add return journey to start
-  if (currentIndex !== startNodeIndex) {
-    const returnData = distanceMatrix.rows[currentIndex].elements[startNodeIndex];
+  // Build the journey with travel legs and return to start
+  const journey = [];
+  let visitOrder = 1;
+  
+  // Add all places in optimal order
+  for (let i = 0; i < routeResult.route.length; i++) {
+    const place = routeResult.route[i];
+    
+    // Mark start point
+    const isStartPoint = i === 0;
+    journey.push({
+      ...place,
+      isStartPoint,
+      visitOrder: visitOrder++,
+      arrivalTime: i === 0 ? 0 : undefined
+    });
+    
+    // Add travel leg to next place (if not the last place)
+    if (i < routeResult.route.length - 1) {
+      const currentIndex = places.findIndex(p => p.placeId === place.placeId);
+      const nextPlace = routeResult.route[i + 1];
+      const nextIndex = places.findIndex(p => p.placeId === nextPlace.placeId);
+      
+      const travelData = distanceMatrix.rows[currentIndex]?.elements[nextIndex];
+      if (travelData && travelData.status === 'OK') {
+        journey.push({
+          isTravelLeg: true,
+          from: place.name,
+          to: nextPlace.name,
+          duration: travelData.duration.text,
+          distance: travelData.distance.text,
+          mode: 'walking'
+        });
+      }
+    }
+  }
+  
+  // Add return journey to start (for circular journey)
+  if (routeResult.route.length > 1) {
+    const lastPlaceIndex = places.findIndex(p => p.placeId === routeResult.route[routeResult.route.length - 1].placeId);
+    const returnData = distanceMatrix.rows[lastPlaceIndex]?.elements[startNodeIndex];
+    
     if (returnData && returnData.status === 'OK') {
       const returnTime = returnData.duration.value / 60;
+      
+      // Check if we have time to return
+      if (routeResult.totalTime + returnTime <= maxDuration) {
         journey.push({
-        isTravelLeg: true,
-        from: places[currentIndex].name,
-        to: startPlace.name,
-        duration: returnData.duration.text || `${Math.round(returnTime)} min`,
-        distance: returnData.distance.text,
-        mode: 'driving'
-      });
-      
-      // Add end point (same as start)
-      journey.push({
-        ...startPlace,
-        isEndPoint: true,
-        visitOrder: visitOrder++,
-        arrivalTime: totalTime + returnTime
-      });
-      
-      totalTime += returnTime;
+          isTravelLeg: true,
+          from: routeResult.route[routeResult.route.length - 1].name,
+          to: startPlace.name,
+          duration: returnData.duration.text,
+          distance: returnData.distance.text,
+          mode: 'walking'
+        });
+        
+        // Add end point (same as start for circular)
+        journey.push({
+          ...startPlace,
+          isEndPoint: true,
+          visitOrder: visitOrder++,
+          arrivalTime: routeResult.totalTime + returnTime
+        });
+      }
     }
   }
   
-  console.log(`🔄 Circular journey completed: ${visited.size} places, ${totalTime.toFixed(1)} minutes, ₹${totalCost}`);
+  console.log(`🎉 Circular journey created: ${routeResult.route.length} places, ${(routeResult.totalDistance / 1000).toFixed(2)} km total distance`);
   return journey;
 };
 
 /**
- * Creates a point-to-point journey from start to end with interesting places in between
+ * Creates a point-to-point journey from start to end with optimal intermediate stops
+ * Uses nearest neighbor approach to minimize total distance
  */
 const createPointToPointJourney = async (places, preferences, maxDuration, maxBudget, startPoint, endPoint, distanceMatrix) => {
-  console.log('🎯 Creating point-to-point journey');
+  console.log('🎯 Creating optimized point-to-point journey');
   
   // Find nearest places to start and end points
   const startNodeIndex = findNearestPlace(places, startPoint);
@@ -660,7 +579,7 @@ const createPointToPointJourney = async (places, preferences, maxDuration, maxBu
   const startPlace = places[startNodeIndex];
   const endPlace = places[endNodeIndex];
   
-  console.log(`Journey from: ${startPlace.name} to: ${endPlace.name}`);
+  console.log(`🏁 Journey from: ${startPlace.name} to: ${endPlace.name}`);
   
   // Check direct travel time between start and end
   const directTravelData = distanceMatrix.rows[startNodeIndex]?.elements[endNodeIndex];
@@ -672,102 +591,158 @@ const createPointToPointJourney = async (places, preferences, maxDuration, maxBu
   const minRequiredTime = directTravelTime + (startPlace.estimatedVisitDuration || 30) + (endPlace.estimatedVisitDuration || 30);
   
   if (minRequiredTime > maxDuration) {
-    console.log('⚠️ Not enough time for direct journey, creating minimal route');
+    console.log('⚠️ Not enough time for intermediate stops, creating direct route');
     return createMinimalPointToPointJourney(startPlace, endPlace, directTravelData);
   }
   
-  // Create journey with intermediate stops
-  const visited = new Set([startNodeIndex, endNodeIndex]);
-  const journey = [{
-    ...startPlace,
-    isStartPoint: true,
-    visitOrder: 1
-  }];
+  // Filter places that are roughly on the path between start and end
+  const intermediateCandidates = findIntermediatePlaces(places, startNodeIndex, endNodeIndex, new Set([startNodeIndex, endNodeIndex]));
   
-  let currentIndex = startNodeIndex;
-  let totalTime = startPlace.estimatedVisitDuration || 30;
-  let totalCost = startPlace.estimatedCost || 20;
-  let visitOrder = 2;
-  
-  // Find intermediate places that are roughly on the path from start to end
-  const intermediatePlaces = findIntermediatePlaces(places, startNodeIndex, endNodeIndex, visited);
-  
-  // Add intermediate places
-  for (const placeIndex of intermediatePlaces) {
-    const candidate = places[placeIndex];
-    const travelToCandidate = distanceMatrix.rows[currentIndex]?.elements[placeIndex];
-    const candidateToEnd = distanceMatrix.rows[placeIndex]?.elements[endNodeIndex];
-    
-    if (!travelToCandidate || travelToCandidate.status !== 'OK' || 
-        !candidateToEnd || candidateToEnd.status !== 'OK') continue;
-    
-    const travelTime = travelToCandidate.duration.value / 60;
-    const remainingTimeToEnd = candidateToEnd.duration.value / 60;
-    const visitTime = candidate.estimatedVisitDuration || 30;
-    const visitCost = candidate.estimatedCost || 20;
-    const endVisitTime = endPlace.estimatedVisitDuration || 30;
-    
-    // Check if we can visit this place and still reach the end
-    const projectedTime = totalTime + travelTime + visitTime + remainingTimeToEnd + endVisitTime;
-    const projectedCost = totalCost + visitCost + (endPlace.estimatedCost || 20);
-    
-    if (projectedTime > maxDuration || projectedCost > maxBudget) {
-      console.log(`Skipping ${candidate.name} - would exceed constraints`);
-      continue;
-    }
-      // Add travel leg
-    journey.push({
-      isTravelLeg: true,
-      from: places[currentIndex].name,
-      to: candidate.name,
-      duration: travelToCandidate.duration.text || `${Math.round(travelTime)} min`,
-      distance: travelToCandidate.distance.text,
-      mode: 'driving'
-    });
-    
-    // Add the place
-    journey.push({
-      ...candidate,
-      visitOrder: visitOrder++,
-      arrivalTime: totalTime + travelTime
-    });
-    
-    visited.add(placeIndex);
-    totalTime += travelTime + visitTime;
-    totalCost += visitCost;
-    currentIndex = placeIndex;
-    
-    console.log(`Added intermediate: ${candidate.name} (Total time: ${totalTime.toFixed(1)}min, cost: ₹${totalCost})`);
+  if (intermediateCandidates.length === 0) {
+    console.log('⚠️ No suitable intermediate places found, creating direct route');
+    return createMinimalPointToPointJourney(startPlace, endPlace, directTravelData);
   }
   
-  // Add final travel to end point
-  const finalTravelData = distanceMatrix.rows[currentIndex].elements[endNodeIndex];
+  // Create a modified places array with only start, end, and intermediate candidates
+  const relevantPlaces = [startPlace];
+  const relevantIndices = [startNodeIndex];
+  
+  // Add intermediate candidates
+  for (const candidateIndex of intermediateCandidates) {
+    relevantPlaces.push(places[candidateIndex]);
+    relevantIndices.push(candidateIndex);
+  }
+  
+  // Add end place
+  relevantPlaces.push(endPlace);
+  relevantIndices.push(endNodeIndex);
+  
+  console.log(`🎯 Planning route through ${relevantPlaces.length} places (including start and end)`);
+  
+  // Create a modified distance matrix for relevant places only
+  const relevantDistanceMatrix = {
+    rows: relevantIndices.map(fromIdx => ({
+      elements: relevantIndices.map(toIdx => distanceMatrix.rows[fromIdx]?.elements[toIdx] || { status: 'NOT_FOUND' })
+    }))
+  };
+  
+  // Use nearest neighbor algorithm starting from the first place (start)
+  const visited = new Set([0]); // Start place is at index 0 in relevantPlaces
+  const route = [relevantPlaces[0]];
+  let currentIndex = 0;
+  let totalTime = relevantPlaces[0].estimatedVisitDuration || 30;
+  let totalCost = relevantPlaces[0].estimatedCost || 0;
+  let totalDistance = 0;
+  
+  // Must end at the last place (end place)
+  const endPlaceIndex = relevantPlaces.length - 1;
+  
+  // Continue until we visit all places or run out of constraints
+  while (visited.size < relevantPlaces.length - 1) { // -1 because we need to save the end place for last
+    let nearestIndex = -1;
+    let shortestDistance = Infinity;
+    
+    // Find nearest unvisited place (except the end place, which we save for last)
+    for (let i = 0; i < relevantPlaces.length - 1; i++) {
+      if (visited.has(i)) continue;
+      
+      const travelData = relevantDistanceMatrix.rows[currentIndex]?.elements[i];
+      if (!travelData || travelData.status !== 'OK') continue;
+      
+      const travelDistance = travelData.distance.value;
+      const travelTime = travelData.duration.value / 60;
+      const candidate = relevantPlaces[i];
+      const visitTime = candidate.estimatedVisitDuration || 30;
+      const visitCost = candidate.estimatedCost || 0;
+      
+      // Check if we can visit this place and still reach the end
+      const timeToEnd = relevantDistanceMatrix.rows[i]?.elements[endPlaceIndex]?.duration?.value / 60 || 0;
+      const projectedTime = totalTime + travelTime + visitTime + timeToEnd + (relevantPlaces[endPlaceIndex].estimatedVisitDuration || 30);
+      const projectedCost = totalCost + visitCost + (relevantPlaces[endPlaceIndex].estimatedCost || 0);
+      
+      if (projectedTime > maxDuration || projectedCost > maxBudget) {
+        continue;
+      }
+      
+      if (travelDistance < shortestDistance) {
+        shortestDistance = travelDistance;
+        nearestIndex = i;
+      }
+    }
+    
+    if (nearestIndex === -1) {
+      console.log(`🚫 No more intermediate places can be added within constraints`);
+      break;
+    }
+    
+    // Add the nearest intermediate place
+    const nextPlace = relevantPlaces[nearestIndex];
+    const travelData = relevantDistanceMatrix.rows[currentIndex].elements[nearestIndex];
+    const travelTime = travelData.duration.value / 60;
+    
+    route.push(nextPlace);
+    visited.add(nearestIndex);
+    
+    totalTime += travelTime + (nextPlace.estimatedVisitDuration || 30);
+    totalCost += nextPlace.estimatedCost || 0;
+    totalDistance += travelData.distance.value;
+    currentIndex = nearestIndex;
+    
+    console.log(`✅ Added intermediate: ${nextPlace.name} (Distance: ${(travelData.distance.value / 1000).toFixed(2)} km)`);
+  }
+  
+  // Finally, add the end place
+  const finalTravelData = relevantDistanceMatrix.rows[currentIndex]?.elements[endPlaceIndex];
   if (finalTravelData && finalTravelData.status === 'OK') {
     const finalTravelTime = finalTravelData.duration.value / 60;
-      journey.push({
-      isTravelLeg: true,
-      from: places[currentIndex].name,
-      to: endPlace.name,
-      duration: finalTravelData.duration.text || `${Math.round(finalTravelTime)} min`,
-      distance: finalTravelData.distance.text,
-      mode: 'driving'
-    });
+    route.push(relevantPlaces[endPlaceIndex]);
+    totalTime += finalTravelTime + (relevantPlaces[endPlaceIndex].estimatedVisitDuration || 30);
+    totalCost += relevantPlaces[endPlaceIndex].estimatedCost || 0;
+    totalDistance += finalTravelData.distance.value;
     
-    totalTime += finalTravelTime;
+    console.log(`🎯 Added final destination: ${relevantPlaces[endPlaceIndex].name}`);
   }
   
-  // Add end point
-  journey.push({
-    ...endPlace,
-    isEndPoint: true,
-    visitOrder: visitOrder++,
-    arrivalTime: totalTime
-  });
+  console.log(`🎉 Point-to-point route created: ${route.length} places, ${(totalDistance / 1000).toFixed(2)} km total distance`);
   
-  totalTime += endPlace.estimatedVisitDuration || 30;
-  totalCost += endPlace.estimatedCost || 20;
+  // Build journey with travel legs
+  const journey = [];
+  let visitOrder = 1;
   
-  console.log(`🎯 Point-to-point journey completed: ${visited.size} places, ${totalTime.toFixed(1)} minutes, ₹${totalCost}`);
+  for (let i = 0; i < route.length; i++) {
+    const place = route[i];
+    
+    // Mark start and end points
+    const isStartPoint = i === 0;
+    const isEndPoint = i === route.length - 1;
+    
+    journey.push({
+      ...place,
+      isStartPoint,
+      isEndPoint,
+      visitOrder: visitOrder++
+    });
+    
+    // Add travel leg to next place (if not the last place)
+    if (i < route.length - 1) {
+      const currentOriginalIndex = relevantIndices[relevantPlaces.findIndex(p => p.placeId === place.placeId)];
+      const nextPlace = route[i + 1];
+      const nextOriginalIndex = relevantIndices[relevantPlaces.findIndex(p => p.placeId === nextPlace.placeId)];
+      
+      const travelData = distanceMatrix.rows[currentOriginalIndex]?.elements[nextOriginalIndex];
+      if (travelData && travelData.status === 'OK') {
+        journey.push({
+          isTravelLeg: true,
+          from: place.name,
+          to: nextPlace.name,
+          duration: travelData.duration.text,
+          distance: travelData.distance.text,
+          mode: 'walking'
+        });
+      }
+    }
+  }
+  
   return journey;
 };
 

@@ -23,8 +23,6 @@ dotenv.config();
 const client = new Client({});
 const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
-
-
 // Validate API key on startup
 if (!API_KEY || API_KEY === 'YOUR_ACTUAL_API_KEY_HERE') {
   console.error('❌ Google Maps API key is missing or not configured properly!');
@@ -40,12 +38,8 @@ const PRICE_LEVEL_MAP = { 1: 15, 2: 40, 3: 75, 4: 125 };
  * @param {Array} rawPlaces - Raw places from Google Places API
  * @returns {Array} Filtered and processed places
  */
-<<<<<<< HEAD
 const filterAndProcessPlaces = (rawPlaces) => {
   // Define what types of places we DON'T want (irrelevant for tourism)
-=======
-const filterAndProcessPlaces = (rawPlaces) => {  // Define what types of places we DON'T want (irrelevant for tourism)
->>>>>>> 48711cfa995a1a068f438d267d39ad4117d39716
   const excludedTypes = [
     'lodging', 'hotel', 'real_estate_agency', 'insurance_agency', 
     'finance', 'bank', 'atm', 'gas_station', 'car_rental',
@@ -69,6 +63,7 @@ const filterAndProcessPlaces = (rawPlaces) => {  // Define what types of places 
     'cafe', 'restaurant', 'food', 'meal_takeaway', 'meal_delivery',
     'shopping_mall', 'store', 'market', 'library', 'cultural_center'
   ];
+  
   // Enhanced keywords to exclude business/corporate places
   const excludedNameKeywords = [
     'society', 'pvt', 'private limited', 'technologies', 'solutions',
@@ -86,7 +81,9 @@ const filterAndProcessPlaces = (rawPlaces) => {  // Define what types of places 
     'tech park', 'software', 'IT park', 'cyber', 'electronic city',
     'whitefield', 'manyata', 'embassy', 'prestige', 'brigade',
     'rga', 'sobha', 'salarpuria', 'godrej', 'tata'
-  ];// Stricter rating criteria for better place quality
+  ];
+  
+  // Stricter rating criteria for better place quality
   const MIN_RATING = 4.0; // Increased from 3.8 for higher quality
   const MIN_RATING_COUNT = 15; // Increased from 5 for more credibility
   const PREFERRED_RATING = 4.3; // Increased from 4.2 for premium places
@@ -95,11 +92,6 @@ const filterAndProcessPlaces = (rawPlaces) => {  // Define what types of places 
   const uniquePlaces = new Map();
   let filteredOutCount = 0;
 
-<<<<<<< HEAD
-=======
-
-
->>>>>>> 48711cfa995a1a068f438d267d39ad4117d39716
   rawPlaces.forEach(place => {
     if (!uniquePlaces.has(place.place_id) && place.business_status === 'OPERATIONAL') {
       // Check if this place has any excluded types (but ignore 'establishment' and 'point_of_interest')
@@ -107,23 +99,6 @@ const filterAndProcessPlaces = (rawPlaces) => {  // Define what types of places 
         excludedTypes.includes(type) && type !== 'establishment' && type !== 'point_of_interest'
       );
       const hasExcludedType = significantExcludedTypes.length > 0;
-<<<<<<< HEAD
-      // Check if this place has any preferred types
-      const hasPreferredType = place.types.some(type => preferredTypes.includes(type));
-      // Stricter rating criteria for higher quality places
-      const rating = place.rating || 0;
-      const reviewCount = place.user_ratings_total || 0;
-      const hasAcceptableQuality = 
-        (rating >= PREFERRED_RATING && reviewCount >= PREFERRED_RATING_COUNT) ||
-        (rating >= MIN_RATING && reviewCount >= MIN_RATING_COUNT) ||
-        (place.types.includes('tourist_attraction') && rating >= 4.0 && reviewCount >= 10) ||
-        (place.types.includes('park') && rating >= 4.0 && reviewCount >= 8) ||
-        (place.types.includes('museum') && rating >= 4.2 && reviewCount >= 15) ||
-        ((place.types.includes('cafe') || place.types.includes('restaurant')) && rating >= 4.2 && reviewCount >= 25);
-      if (hasPreferredType && !hasExcludedType && hasAcceptableQuality) {
-        const name = place.name.toLowerCase();
-        const hasExcludedKeyword = excludedNameKeywords.some(keyword => name.includes(keyword.toLowerCase()));
-=======
       
       // Check if this place has any preferred types
       const hasPreferredType = place.types.some(type => preferredTypes.includes(type));
@@ -131,7 +106,8 @@ const filterAndProcessPlaces = (rawPlaces) => {  // Define what types of places 
       // Stricter rating criteria for higher quality places
       const rating = place.rating || 0;
       const reviewCount = place.user_ratings_total || 0;
-        // More selective quality criteria - prioritize well-rated places
+      
+      // More selective quality criteria - prioritize well-rated places
       const hasAcceptableQuality = 
         (rating >= PREFERRED_RATING && reviewCount >= PREFERRED_RATING_COUNT) || // High quality with many reviews
         (rating >= MIN_RATING && reviewCount >= MIN_RATING_COUNT) || // Good rating with decent reviews
@@ -139,7 +115,8 @@ const filterAndProcessPlaces = (rawPlaces) => {  // Define what types of places 
         (place.types.includes('park') && rating >= 4.0 && reviewCount >= 8) || // Parks with good rating
         (place.types.includes('museum') && rating >= 4.2 && reviewCount >= 15) || // Museums with high rating
         ((place.types.includes('cafe') || place.types.includes('restaurant')) && rating >= 4.2 && reviewCount >= 25); // Food places with high standards
-        // Only include places that meet all criteria
+        
+      // Only include places that meet all criteria
       if (hasPreferredType && !hasExcludedType && hasAcceptableQuality) {
         // Additional filtering for specific cases
         const name = place.name.toLowerCase();
@@ -148,74 +125,44 @@ const filterAndProcessPlaces = (rawPlaces) => {  // Define what types of places 
         const hasExcludedKeyword = excludedNameKeywords.some(keyword => 
           name.includes(keyword.toLowerCase())
         );
-          // Additional pattern matching for corporate names
->>>>>>> 48711cfa995a1a068f438d267d39ad4117d39716
+        
+        // Additional pattern matching for corporate names
         const corporatePatterns = [
           /\b(pvt|ltd|inc|corp|llc|llp)\b/i,
           /\b(technologies|solutions|services|consulting|consultancy)\b/i,
           /\b(office|headquarters|building|plaza|tower|complex)\b/i,
           /\b(industries|industrial|manufacturing|enterprise)\b/i,
           /\b(company|firm|agency|corporation|business)\b/i,
-<<<<<<< HEAD
-=======
           // Bangalore-specific patterns
->>>>>>> 48711cfa995a1a068f438d267d39ad4117d39716
           /\b(tech\s*park|software|cyber|electronic\s*city)\b/i,
           /\b(manyata|whitefield|embassy|prestige|brigade)\b/i,
           /\b(infotech|info\s*tech|IT\s*park|business\s*park)\b/i
         ];
-<<<<<<< HEAD
-        const matchesCorporatePattern = corporatePatterns.some(pattern => pattern.test(name));
-        if (hasExcludedKeyword || matchesCorporatePattern) {
-=======
         
         const matchesCorporatePattern = corporatePatterns.some(pattern => pattern.test(name));
         
         if (hasExcludedKeyword || matchesCorporatePattern) {
-
->>>>>>> 48711cfa995a1a068f438d267d39ad4117d39716
           filteredOutCount++;
           return;
         }
+        
         // Additional check: if place has very few reviews but claims to be a tourist attraction, be suspicious
         if (place.types.includes('tourist_attraction') && 
             place.user_ratings_total < 20 && 
             !place.types.includes('natural_feature') &&
             !place.types.includes('historical_landmark')) {
-
           filteredOutCount++;
           return;
         }
         
-        // Additional check: exclude places with suspiciously few reviews for their rating        if (rating > 4.5 && reviewCount < 10) {
+        // Additional check: exclude places with suspiciously few reviews for their rating
+        if (rating > 4.5 && reviewCount < 10) {
           filteredOutCount++;
           return;
         }
-
+        
         // Additional check: exclude places that might be residential or commercial buildings
-        if (place.types.includes('establishment') &&
-            place.types.length === 2 &&
-            place.types.includes('point_of_interest') &&
-            reviewCount < 15) {
-          filteredOutCount++;
-          return;
-        }
-          // Additional check: if place has very few reviews but claims to be a tourist attraction, be suspicious
-        if (place.types.includes('tourist_attraction') && 
-            place.user_ratings_total < 20 && 
-            !place.types.includes('natural_feature') &&
-            !place.types.includes('historical_landmark')) {
-
-          filteredOutCount++;
-          return;
-        }
-        
-        // Additional check: exclude places with suspiciously few reviews for their rating        if (rating > 4.5 && reviewCount < 10) {
-          filteredOutCount++;
-          return;
-        }
-        
-        // Additional check: exclude places that might be residential or commercial buildings        if (place.types.includes('establishment') && 
+        if (place.types.includes('establishment') && 
             place.types.length === 2 && 
             place.types.includes('point_of_interest') &&
             reviewCount < 15) {
@@ -263,12 +210,8 @@ const filterAndProcessPlaces = (rawPlaces) => {  // Define what types of places 
         if (!hasPreferredType) {
           console.log(`❌ Filtered out (no preferred type): ${place.name} - Types: ${place.types.join(', ')}`);
         } else if (hasExcludedType) {
-<<<<<<< HEAD
-          console.log(`❌ Filtered out (excluded type): ${place.name} - Types: ${significantExcludedTypes.join(', ')} in ${place.types.join(', ')}`);        } else if (!hasAcceptableQuality) {
-=======
           console.log(`❌ Filtered out (excluded type): ${place.name} - Types: ${significantExcludedTypes.join(', ')} in ${place.types.join(', ')}`);
         } else if (!hasAcceptableQuality) {
->>>>>>> 48711cfa995a1a068f438d267d39ad4117d39716
           console.log(`❌ Filtered out (quality criteria): ${place.name} - Rating: ${place.rating || 'N/A'}, Reviews: ${place.user_ratings_total || 0}`);
         }
         filteredOutCount++;
@@ -277,12 +220,8 @@ const filterAndProcessPlaces = (rawPlaces) => {  // Define what types of places 
       console.log(`⚠️ Duplicate place skipped: ${place.name}`);
     } else if (place.business_status !== 'OPERATIONAL') {
       console.log(`⚠️ Non-operational place skipped: ${place.name} (Status: ${place.business_status})`);
-<<<<<<< HEAD
     }
   });
-=======
-    }  });
->>>>>>> 48711cfa995a1a068f438d267d39ad4117d39716
 
   const finalPlaces = Array.from(uniquePlaces.values());
   console.log(`After filtering: ${finalPlaces.length} relevant places (filtered out: ${filteredOutCount})`);
