@@ -49,10 +49,9 @@ export const tripExperience = async (req, res) => {
     
     if (!journey || journey.length === 0) {
       return res.status(404).json({ message: 'Could not create a suitable journey with the given constraints.' });
-    }
-
-    // --- Step 3: Return the Result ---
-    console.log(`✅ Generated ${journeyMode} journey with ${journey.length} stops`);
+    }    // --- Step 3: Return the Result ---
+    const actualPlaces = journey.filter(item => !item.isTravelLeg);
+    console.log(`✅ Generated ${journeyMode} journey with ${actualPlaces.length} stops`);
     res.status(200).json(journey);
 
   } catch (error) {

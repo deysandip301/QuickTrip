@@ -477,46 +477,22 @@ export const getDistanceMatrix = async (places) => {
   try {
     if (places.length < 2) return null;
     
-    console.log(`Getting distance matrix for ${places.length} places`);
+    console.log(`Getting distance matrix for ${places.length} places`);    // Trust that places have already been filtered by smartPlaceSelection in graphService
+    // Google Distance Matrix API limits: 25 origins x 25 destinations = 625 elements max
+    // But in practice, we need to stay well below this to avoid MAX_ELEMENTS_EXCEEDED
+    // The graphService should ensure we never exceed 10 places (10x10 = 100 elements)
     
-    // Start with a very conservative approach to avoid API limits
-    const MAX_PLACES = 15; // Increased from 8 to allow more places in journey
-    
-    let limitedPlaces = places;
-    if (places.length > MAX_PLACES) {
-      console.log(`Limiting places from ${places.length} to ${MAX_PLACES} for API efficiency`);
-      // Sort by rating and take the top places, but ensure variety
-      const sortedByRating = places.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-      
-      // Take top places but ensure we have variety of types
-      const selectedPlaces = [];
-      const typeCount = {};
-      
-      for (const place of sortedByRating) {
-        if (selectedPlaces.length >= MAX_PLACES) break;
-        
-        const mainType = place.types.find(type => 
-          ['museum', 'park', 'tourist_attraction', 'cafe', 'restaurant', 'place_of_worship'].includes(type)
-        ) || place.types[0];
-        
-        // Limit each type to avoid monotonous journeys
-        if (!typeCount[mainType] || typeCount[mainType] < 4) {
-          selectedPlaces.push(place);
-          typeCount[mainType] = (typeCount[mainType] || 0) + 1;
-        }
-      }
-      
-      limitedPlaces = selectedPlaces;
-      console.log(`Selected ${limitedPlaces.length} places with variety:`, typeCount);
+    if (places.length > 10) {
+      console.warn(`⚠️ Warning: Received ${places.length} places, which may exceed API limits. Consider reducing in graphService.`);
     }
     
-    const locations = limitedPlaces.map(place => place.location);
+    const locations = places.map(place => place.location);
     
     const result = await client.distancematrix({
       params: {
         origins: locations,
         destinations: locations,
-        mode: 'walking', // Changed from 'driving' to 'walking' for tourism
+        mode: 'driving', // Changed to 'driving' for better travel time estimates
         units: 'metric',
         key: API_KEY,
       },
@@ -526,7 +502,7 @@ export const getDistanceMatrix = async (places) => {
       console.log(`✅ Distance matrix retrieved successfully for ${locations.length} locations`);
       return {
         ...result.data,
-        limitedPlaces: limitedPlaces // Include the limited places for reference
+        limitedPlaces: places // Include the places for reference
       };
     } else {
       console.error('Distance matrix API error:', result.data.status);
