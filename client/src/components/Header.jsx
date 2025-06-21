@@ -21,11 +21,10 @@ const Header = ({ user, currentPage, setCurrentPage, onNavigateHome, onNavigateS
       case 'planning':
         return 'Plan Your Perfect Journey';
       case 'result':
-        return 'Your Personalized Itinerary';
-      case 'saved':
+        return 'Your Personalized Itinerary';      case 'saved':
         return 'Your Saved Adventures';
       default:
-        return 'AI-Powered Travel Companion';
+        return 'Smart Travel Companion';
     }
   };
 
