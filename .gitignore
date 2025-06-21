@@ -65,3 +65,22 @@ coverage/
 # Local development
 .cache/
 temp/
+
+# Batch files for local development
+*.bat
+start-backend.bat
+start-frontend.bat
+
+# Test files
+*test*.js
+test-*.js
+*-test.js
+detailed-test.js
+test-api.js
+test-distance-matrix.js
+test-endpoint.js
+test-places-types.js
+
+# PowerShell scripts (optional - comment out if you want to include them)
+# *.ps1
+# start.ps1

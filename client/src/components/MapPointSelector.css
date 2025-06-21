@@ -1,0 +1,911 @@
+/* MapPointSelector.css */
+
+.map-point-selector-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+/* Header */
+.map-point-selector-header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.map-point-selector-title-section {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.map-point-selector-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.map-point-selector-icon {
+  font-size: 1.25rem;
+}
+
+.map-point-selector-subtitle {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Mode Selection */
+.map-point-selector-modes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.map-point-selector-mode {
+  position: relative;
+  padding: 1rem;
+  border-radius: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border: 2px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.8);
+  color: #64748b;
+}
+
+.map-point-selector-mode:hover {
+  border-color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.map-point-selector-mode.active {
+  color: white;
+  border-color: #10b981;
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+  transform: translateY(-2px);
+}
+
+.map-point-selector-mode.active:nth-child(1) {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.map-point-selector-mode.active:nth-child(2) {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border-color: #f59e0b;
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+}
+
+.map-point-selector-mode.completed {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  color: #065f46;
+}
+
+.map-point-selector-mode-marker {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: white;
+  flex-shrink: 0;
+}
+
+.map-point-selector-mode-marker.start {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.map-point-selector-mode-marker.end {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.map-point-selector-mode.active .map-point-selector-mode-marker {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.map-point-selector-mode-label {
+  font-weight: 600;
+}
+
+/* Quick Actions */
+.map-point-selector-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.map-point-selector-action-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border: none;
+  color: white;
+}
+
+.map-point-selector-action-btn.location {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.map-point-selector-action-btn.location:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.map-point-selector-action-btn.reset {
+  background: linear-gradient(135deg, #64748b, #475569);
+  box-shadow: 0 4px 15px rgba(100, 116, 139, 0.3);
+}
+
+.map-point-selector-action-btn.reset:hover {
+  background: linear-gradient(135deg, #475569, #334155);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(100, 116, 139, 0.4);
+}
+
+.map-point-selector-action-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Status Display */
+.map-point-selector-status {
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  border-radius: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.map-point-selector-status-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.875rem;
+}
+
+.map-point-selector-current-mode {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.map-point-selector-status-indicator {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.map-point-selector-status-indicator.start {
+  background: #10b981;
+}
+
+.map-point-selector-status-indicator.end {
+  background: #f59e0b;
+}
+
+.map-point-selector-status-text {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.map-point-selector-selected-point {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 0.5rem;
+  border-left: 3px solid #3b82f6;
+}
+
+.map-point-selector-selected-text {
+  color: #1e40af;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Map Container */
+.map-point-selector-map-container {
+  flex: 1;
+  position: relative;
+  background: white;
+  border-radius: 1rem 1rem 0 0;
+  overflow: hidden;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.map-point-selector-map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Custom Markers - Enhanced Pin Style */
+.map-point-selector-marker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  animation: markerDrop 0.6s ease-out;
+  transform-origin: center bottom;
+}
+
+@keyframes markerDrop {
+  0% {
+    transform: translateY(-30px) scale(0.5);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(5px) scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.map-point-selector-marker-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50% 50% 50% 0;
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid white;
+  transform: rotate(-45deg);
+  position: relative;
+  z-index: 2;
+  box-shadow: 
+    0 8px 25px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.map-point-selector-marker-text {
+  transform: rotate(45deg);
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.map-point-selector-marker.start .map-point-selector-marker-icon {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 
+    0 8px 25px rgba(16, 185, 129, 0.4),
+    0 0 0 1px rgba(16, 185, 129, 0.2),
+    0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.map-point-selector-marker.end .map-point-selector-marker-icon {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 
+    0 8px 25px rgba(245, 158, 11, 0.4),
+    0 0 0 1px rgba(245, 158, 11, 0.2),
+    0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.map-point-selector-marker-point {
+  width: 4px;
+  height: 12px;
+  margin-top: -6px;
+  position: relative;
+  z-index: 1;
+  border-radius: 0 0 2px 2px;
+}
+
+.map-point-selector-marker.start .map-point-selector-marker-point {
+  background: linear-gradient(to bottom, #10b981, #059669);
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);
+}
+
+.map-point-selector-marker.end .map-point-selector-marker-point {
+  background: linear-gradient(to bottom, #f59e0b, #d97706);
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
+}
+
+/* Subtle glow effect */
+.map-point-selector-marker::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-45deg);
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50% 50% 50% 0;
+  border: 2px solid;
+  opacity: 0.4;
+  animation: markerGlow 2s infinite ease-in-out;
+  z-index: 0;
+}
+
+.map-point-selector-marker.start::before {
+  border-color: #10b981;
+}
+
+.map-point-selector-marker.end::before {
+  border-color: #f59e0b;
+}
+
+@keyframes markerGlow {
+  0%, 100% {
+    transform: translateX(-50%) rotate(-45deg) scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateX(-50%) rotate(-45deg) scale(1.2);
+    opacity: 0.1;
+  }
+}
+
+/* Floating Instructions */
+.map-point-selector-instructions {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  right: 1rem;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.map-point-selector-instructions-content {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  padding: 1rem;
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  text-align: center;
+  max-width: 24rem;
+  pointer-events: auto;
+}
+
+.map-point-selector-instructions-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.map-point-selector-instructions-text .start {
+  color: #065f46;
+}
+
+.map-point-selector-instructions-text .end {
+  color: #92400e;
+}
+
+.map-point-selector-instructions-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.map-point-selector-instructions-dot.start {
+  background: #10b981;
+}
+
+.map-point-selector-instructions-dot.end {
+  background: #f59e0b;
+}
+
+.map-point-selector-instructions-hints {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.map-point-selector-instructions-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.map-point-selector-instructions-hint-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .map-point-selector-header {
+    padding: 1rem;
+  }
+  
+  .map-point-selector-title {
+    font-size: 1.25rem;
+  }
+  
+  .map-point-selector-modes {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .map-point-selector-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .map-point-selector-instructions {
+    bottom: 0.5rem;
+    left: 0.5rem;
+    right: 0.5rem;
+  }
+  
+  .map-point-selector-instructions-content {
+    padding: 0.75rem;
+  }
+  
+  .map-point-selector-instructions-hints {
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .map-point-selector-header {
+    padding: 0.75rem;
+  }
+  
+  .map-point-selector-title {
+    font-size: 1.125rem;
+  }
+  
+  .map-point-selector-mode {
+    padding: 0.75rem;
+    font-size: 0.8125rem;
+  }  
+  .map-point-selector-mode-marker {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.75rem;
+  }
+  
+  .map-point-selector-instructions-hints {
+    display: none; /* Hide hints on very small screens */
+  }
+}
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.map-selector-mode-btn {
+  position: relative;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  background: none;
+}
+
+.map-selector-mode-btn.start {
+  border-color: #d1d5db;
+  background: rgba(255, 255, 255, 0.8);
+  color: #374151;
+}
+
+.map-selector-mode-btn.start.active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-color: #10b981;
+  color: white;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  transform: scale(1.02);
+}
+
+.map-selector-mode-btn.start:hover:not(.active) {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.map-selector-mode-btn.end {
+  border-color: #d1d5db;
+  background: rgba(255, 255, 255, 0.8);
+  color: #374151;
+}
+
+.map-selector-mode-btn.end.active {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-color: #ef4444;
+  color: white;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  transform: scale(1.02);
+}
+
+.map-selector-mode-btn.end:hover:not(.active) {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.map-selector-mode-indicator {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.map-selector-mode-btn.start .map-selector-mode-indicator {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.map-selector-mode-btn.start.active .map-selector-mode-indicator {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.map-selector-mode-btn.end .map-selector-mode-indicator {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.map-selector-mode-btn.end.active .map-selector-mode-indicator {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.map-selector-active-indicator {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 0.75rem;
+  height: 0.75rem;
+  background: #fbbf24;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.map-selector-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.map-selector-action-btn {
+  flex: 1;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.map-selector-action-btn.primary {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.map-selector-action-btn.primary:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.map-selector-action-btn.secondary {
+  background: linear-gradient(135deg, #64748b, #475569);
+  color: white;
+  box-shadow: 0 4px 15px rgba(100, 116, 139, 0.3);
+}
+
+.map-selector-action-btn.secondary:hover {
+  background: linear-gradient(135deg, #475569, #334155);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(100, 116, 139, 0.4);
+}
+
+.map-selector-action-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.map-selector-status {
+  background: linear-gradient(135deg, #f8fafc, rgba(59, 130, 246, 0.05));
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.map-selector-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.875rem;
+}
+
+.map-selector-status-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.map-selector-status-indicator {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.map-selector-status-indicator.start {
+  background: #10b981;
+}
+
+.map-selector-status-indicator.end {
+  background: #ef4444;
+}
+
+.map-selector-status-label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.map-selector-status-points {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+}
+
+.map-selector-point {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.map-selector-point-marker {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+}
+
+.map-selector-point-marker.start {
+  background: #10b981;
+}
+
+.map-selector-point-marker.end {
+  background: #ef4444;
+}
+
+.map-selector-point-label {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-weight: 500;
+}
+
+.map-selector-point-label.start {
+  color: #059669;
+}
+
+.map-selector-point-label.end {
+  color: #dc2626;
+}
+
+.map-selector-map-container {
+  flex: 1;
+  position: relative;
+  background: white;
+  border-radius: 0.75rem 0.75rem 0 0;
+  overflow: hidden;
+}
+
+.map-selector-instructions {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  right: 1rem;
+  margin: 0 auto;
+  max-width: 28rem;
+  z-index: 10;
+}
+
+.map-selector-instructions-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.map-selector-instructions-text {
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.map-selector-instructions-text.start {
+  color: #059669;
+}
+
+.map-selector-instructions-text.end {
+  color: #dc2626;
+}
+
+.map-selector-instructions-tips {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  flex-wrap: wrap;
+}
+
+.map-selector-instructions-tip {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.map-selector-instructions-tip-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+/* Custom Markers */
+.map-marker {
+  position: relative;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.map-marker-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: white;
+  border: 2px solid white;
+}
+
+.map-marker-icon.start {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.map-marker-icon.end {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.map-marker-pin {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 8px solid;
+}
+
+.map-marker-pin.start {
+  border-top-color: #059669;
+}
+
+.map-marker-pin.end {
+  border-top-color: #dc2626;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .map-selector-header {
+    padding: 0.75rem;
+  }
+  
+  .map-selector-title {
+    font-size: 1.125rem;
+  }
+  
+  .map-selector-mode-buttons {
+    gap: 0.5rem;
+  }
+  
+  .map-selector-mode-btn {
+    padding: 0.5rem;
+    font-size: 0.8125rem;
+  }
+  
+  .map-selector-actions {
+    gap: 0.375rem;
+  }
+  
+  .map-selector-action-btn {
+    padding: 0.5rem;
+    font-size: 0.8125rem;
+  }
+  
+  .map-selector-instructions {
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 0.5rem;
+  }
+  
+  .map-selector-instructions-tips {
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .map-selector-header {
+    padding: 0.5rem;
+  }
+  
+  .map-selector-instructions-tips {
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+}
