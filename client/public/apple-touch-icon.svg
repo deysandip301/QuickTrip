@@ -1,0 +1,21 @@
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with travel theme gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#06B6D4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0891B2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background with rounded corners for iOS -->
+  <rect width="180" height="180" rx="40" fill="url(#bgGradient)"/>
+  
+  <!-- Stylized "Q" representing QuickTrip -->
+  <circle cx="90" cy="90" r="45" fill="none" stroke="white" stroke-width="16"/>
+  
+  <!-- Arrow tail for "Q" and direction/travel theme -->
+  <path d="M115 115 L140 140" stroke="white" stroke-width="16" stroke-linecap="round"/>
+  
+  <!-- Small dot to complete the Q -->
+  <circle cx="125" cy="125" r="8" fill="white"/>
+</svg>

@@ -1,0 +1,21 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with travel theme gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#06B6D4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0891B2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="16" cy="16" r="16" fill="url(#bgGradient)"/>
+  
+  <!-- Stylized "Q" representing QuickTrip -->
+  <circle cx="16" cy="16" r="8" fill="none" stroke="white" stroke-width="3"/>
+  
+  <!-- Arrow tail for "Q" and direction/travel theme -->
+  <path d="M20 20 L25 25" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Small dot to complete the Q and add travel pin reference -->
+  <circle cx="22" cy="22" r="1.5" fill="white"/>
+</svg>
