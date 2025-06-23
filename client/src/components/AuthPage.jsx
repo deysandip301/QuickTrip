@@ -1,23 +1,24 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useAppContext } from '../context/AppContext';
 import { signUp, signIn, onAuthChange } from '../services/firebase';
-// CSS imported in App.jsx
 
-const AuthPage = ({ onAuthSuccess, onBack }) => {
+const AuthPage = () => {
+    const { handleAuthSuccess, navigateToHome } = useAppContext();
+    const location = useLocation();
     const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-
-    // Listen for authentication success
+    const [error, setError] = useState('');    // Listen for authentication success
     useEffect(() => {
         const unsubscribe = onAuthChange((user) => {
-            if (user && onAuthSuccess) {
-                onAuthSuccess();
+            if (user && handleAuthSuccess) {
+                handleAuthSuccess();
             }
         });
 
         return () => unsubscribe();
-    }, [onAuthSuccess]);
+    }, [handleAuthSuccess]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -34,16 +35,13 @@ const AuthPage = ({ onAuthSuccess, onBack }) => {
         }
     };    return (
         <div className="auth-page">
-            <div className="auth-container">
-                {/* Back button */}
-                {onBack && (
-                    <button onClick={onBack} className="auth-back-button">
-                        <svg className="auth-back-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                        Back
-                    </button>
-                )}
+            <div className="auth-container">                {/* Back button */}
+                <button onClick={navigateToHome} className="auth-back-button">
+                    <svg className="auth-back-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back
+                </button>
                 
                 <h2 className="auth-title">{isLogin ? 'Login to Save Journey' : 'Sign Up to Save Journey'}</h2>
                 <p className="auth-subtitle">Create an account to save and access your journeys anytime</p>
@@ -78,15 +76,12 @@ const AuthPage = ({ onAuthSuccess, onBack }) => {
                         {isLogin ? 'Login & Save Journey' : 'Sign Up & Save Journey'}
                     </button>
                 </form>
-                <div className="auth-links">
-                    <button onClick={() => setIsLogin(!isLogin)} className="auth-toggle">
+                <div className="auth-links">                    <button onClick={() => setIsLogin(!isLogin)} className="auth-toggle">
                         {isLogin ? 'Need an account? Sign Up' : 'Have an account? Login'}
                     </button>
-                    {onBack && (
-                        <button onClick={onBack} className="auth-guest">
-                            Continue Without Saving
-                        </button>
-                    )}
+                    <button onClick={navigateToHome} className="auth-guest">
+                        Continue Without Saving
+                    </button>
                 </div>
             </div>
         </div>

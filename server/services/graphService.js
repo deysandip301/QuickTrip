@@ -1,4 +1,4 @@
-// services/graphService.js
+﻿// services/graphService.js
 // Advanced journey planning service using graph algorithms for optimization
 
 import { getDistanceMatrix } from './googleMapsService.js';
@@ -14,15 +14,12 @@ const client = new Client({});
  * OPTIMIZATION: Uses smart place selection and progressive distance matrix building
  */
 export const buildGraphAndFindJourney = async (places, preferences, maxDuration, maxBudget, startPoint, endPoint, journeyMode = 'currentLocation') => {
-  console.log(`🚀 Building journey in ${journeyMode} mode with ${places.length} places`);
     // Step 1: Smart place filtering to reduce API calls
   const optimizedPlaces = await smartPlaceSelection(places, preferences, maxBudget, startPoint, endPoint, journeyMode, maxDuration);
-  console.log(`📊 Optimized from ${places.length} to ${optimizedPlaces.length} places for API efficiency`);
   
   // Step 2: Get distance matrix for optimized places only
   const distanceMatrix = await getOptimizedDistanceMatrix(optimizedPlaces, startPoint, endPoint, journeyMode);
   if (!distanceMatrix) {
-    console.error('❌ Could not get distance matrix');
     return [];
   }
   // Step 3: Create journey based on mode
@@ -37,7 +34,7 @@ export const buildGraphAndFindJourney = async (places, preferences, maxDuration,
   }
   
   const actualPlaces = journey.filter(item => !item.isTravelLeg);
-  console.log(`✅ Generated journey with ${actualPlaces.length} stops`);
+  
   return journey;
 };
 
@@ -216,6 +213,7 @@ const isPreferredPlace = (place, preferences) => {
   return Object.keys(preferences).some(prefType => 
     preferences[prefType] && place.types.includes(prefType)
   );
+  // console.log('Log statement');
 };
 
 /**
@@ -223,7 +221,7 @@ const isPreferredPlace = (place, preferences) => {
  * WHY: When we need optimal paths between ALL place pairs (not just from one source)
  * USE CASE: Point-to-point journeys where we need to find optimal intermediate stops
  * OPTIMIZATION: Precomputes all optimal paths, enabling better intermediate stop selection
- * TIME: O(n³) - only use for smaller datasets (<50 places) or when multiple queries needed
+ * TIME: O(nÂ³) - only use for smaller datasets (<50 places) or when multiple queries needed
  */
 const floydWarshall = (places, distanceMatrix, preferences) => {
   const n = places.length;
@@ -395,8 +393,8 @@ const calculateResourceSurplus = (maxBudget, maxDuration, currentBudget, current
  * OPTIMIZATION: Dynamic algorithm behavior adapts to surplus resources
  */
 const createOptimalRouteWithMultiObjective = (places, distanceMatrix, startIndex, maxDuration, maxBudget, preferences) => {
-  console.log(`🎯 Creating multi-objective optimized route from: ${places[startIndex].name}`);
-  console.log(`📊 Budget: ${maxBudget}, Duration: ${maxDuration} minutes`);
+  
+  
   
   const visited = new Set([startIndex]);
   const route = [places[startIndex]];
@@ -419,16 +417,13 @@ const createOptimalRouteWithMultiObjective = (places, distanceMatrix, startIndex
     // More relaxed rating threshold for longer journeys and minimum place requirements
     const minPlacesForDuration = Math.max(4, Math.floor(maxDuration / 90)); // 1 place per 1.5 hours
     const needMorePlaces = visited.size < minPlacesForDuration;
-    
-    // Adjust threshold based on journey needs - be more lenient when we need more places
+      // Adjust threshold based on journey needs - be more lenient when we need more places
     let minRatingThreshold;
     if (needMorePlaces) {
       minRatingThreshold = 2.0; // Very lenient when we need more places
     } else {
       minRatingThreshold = avgSurplus > 0.8 ? 3.8 : (avgSurplus > 0.5 ? 3.2 : 2.3);
     }
-    
-    console.log(`🔄 Iteration ${iterationCount}: ${visited.size}/${minPlacesForDuration} places, threshold: ${minRatingThreshold}, surplus: ${(avgSurplus * 100).toFixed(1)}%`);
     
     // Run enhanced Dijkstra with current resource context
     const { distances } = dijkstra(
@@ -440,6 +435,7 @@ const createOptimalRouteWithMultiObjective = (places, distanceMatrix, startIndex
       maxDuration,
       { time: totalTime, budget: totalCost }
     );
+  // console.log('Log statement');
       let bestNextIndex = -1;
     let bestScore = -1;
     let bestCandidates = []; // Track top candidates for diversity selection
@@ -471,12 +467,12 @@ const createOptimalRouteWithMultiObjective = (places, distanceMatrix, startIndex
       
       // Calculate multi-objective score
       const placeScore = calculateMultiObjectivePlaceScore(
-        place, 
-        preferences, 
+        place,
+        preferences,
         travelData.distance.value,
         resourceSurplus
       );
-      
+  // console.log('Log statement');
       // Dijkstra distance factor (optimal path consideration)
       const pathEfficiency = 1 / (distances[i] / 1000 + 1);
       
@@ -505,15 +501,15 @@ const createOptimalRouteWithMultiObjective = (places, distanceMatrix, startIndex
       if (combinedScore > bestScore) {
         bestScore = combinedScore;
         bestNextIndex = i;
-      }
-    }
+      }    }
     
     // When we have surplus resources, consider selecting from top candidates for diversity
     if (avgSurplus > 0.4 && bestCandidates.length > 1) {
       bestNextIndex = selectDiverseCandidate(bestCandidates, visitedTypes, avgSurplus);
-    }    if (bestNextIndex === -1) {
+    }
+    
+    if (bestNextIndex === -1) {
       if (needMorePlaces && visited.size < minPlacesForDuration) {
-        console.log(`⚠️ Need more places (${visited.size}/${minPlacesForDuration}), relaxing constraints...`);
         // Try again with much more relaxed criteria
         for (let i = 0; i < places.length; i++) {
           if (visited.has(i)) continue;
@@ -541,9 +537,7 @@ const createOptimalRouteWithMultiObjective = (places, distanceMatrix, startIndex
           }
         }
       }
-      
-      if (bestNextIndex === -1) {
-        console.log(`🚫 No more places within constraints (surplus: ${(avgSurplus * 100).toFixed(1)}%, eligible: ${eligibleCandidates}, min rating: ${minRatingThreshold})`);
+        if (bestNextIndex === -1) {
         break;
       }
     }
@@ -556,19 +550,14 @@ const createOptimalRouteWithMultiObjective = (places, distanceMatrix, startIndex
     visited.add(bestNextIndex);
     
     // Update tracking
-    totalTime += (travelData.duration.value / 60) + (nextPlace.estimatedVisitDuration || 30);
-    totalCost += nextPlace.estimatedCost || 0;
+    totalTime += (travelData.duration.value / 60) + (nextPlace.estimatedVisitDuration || 30);    totalCost += nextPlace.estimatedCost || 0;
     currentIndex = bestNextIndex;
     
     // Track place types for diversity
     nextPlace.types.forEach(type => visitedTypes.add(type));
-    
-    console.log(`✅ Added (Multi-objective): ${nextPlace.name}`);
-    console.log(`   Rating: ${nextPlace.rating}, Score: ${bestScore.toFixed(2)}, Surplus: ${(avgSurplus * 100).toFixed(1)}%`);
   }
   
   const finalSurplus = calculateResourceSurplus(maxBudget, maxDuration, totalCost, totalTime);
-  console.log(`🎉 Multi-objective route: ${route.length} places, ${(finalSurplus.budget * 100).toFixed(1)}% budget surplus, ${(finalSurplus.time * 100).toFixed(1)}% time surplus`);
   
   return { route, totalTime, totalCost, surplus: finalSurplus };
 };
@@ -617,13 +606,13 @@ const addTravelDetailsToJourney = (journey, distanceMatrix, places) => {
  * WHY: Balances efficiency with experience quality based on available resources
  */
 const createCircularJourney = (places, preferences, maxDuration, maxBudget, startPoint, distanceMatrix) => {
-  console.log('🔄 Creating multi-objective optimized circular journey');
+  
   
   const startIndex = findNearestPlace(places, startPoint);
   const startPlace = places[startIndex];
   
-  console.log(`🏁 Starting from: ${startPlace.name}`);
-  console.log(`📊 Resources: ${maxBudget} budget, ${maxDuration} minutes`);
+  
+  
   
   // Use multi-objective optimization for route creation
   const routeResult = createOptimalRouteWithMultiObjective(
@@ -634,9 +623,9 @@ const createCircularJourney = (places, preferences, maxDuration, maxBudget, star
     maxBudget, 
     preferences
   );
-  
+  // console.log('Log statement');
   if (routeResult.route.length === 0) {
-    console.log('❌ Could not create optimized journey');
+    
     return [];
   }
   
@@ -691,14 +680,10 @@ const createCircularJourney = (places, preferences, maxDuration, maxBudget, star
         journey.push({
           ...startPlace,
           isEndPoint: true,
-          visitOrder: visitOrder++
-        });
+          visitOrder: visitOrder++        });
       }
     }
   }
-  
-  console.log(`🎉 Multi-objective circular journey: ${routeResult.route.length} places`);
-  console.log(`📈 Resource utilization: ${((1 - routeResult.surplus.budget) * 100).toFixed(1)}% budget, ${((1 - routeResult.surplus.time) * 100).toFixed(1)}% time`);
   
   return journey;
 };
@@ -709,7 +694,7 @@ const createCircularJourney = (places, preferences, maxDuration, maxBudget, star
  * OPTIMIZATION: Guarantees globally optimal route through selected intermediate points
  */
 const createPointToPointJourney = (places, preferences, maxDuration, maxBudget, startPoint, endPoint, distanceMatrix) => {
-  console.log('🎯 Creating Floyd-Warshall optimized point-to-point journey');
+  
   
   const startIndex = findNearestPlace(places, startPoint);
   const endIndex = findNearestPlace(places, endPoint);
@@ -717,7 +702,7 @@ const createPointToPointJourney = (places, preferences, maxDuration, maxBudget, 
   const startPlace = places[startIndex];
   const endPlace = places[endIndex];
   
-  console.log(`🏁 Optimized journey: ${startPlace.name} → ${endPlace.name}`);
+  
   
   // Check direct route feasibility
   const directTravelData = distanceMatrix.rows[startIndex]?.elements[endIndex];
@@ -729,25 +714,23 @@ const createPointToPointJourney = (places, preferences, maxDuration, maxBudget, 
   const minTimeNeeded = directTravelTime + (startPlace.estimatedVisitDuration || 30) + (endPlace.estimatedVisitDuration || 30);
   
   if (minTimeNeeded > maxDuration) {
-    console.log('⚠️ Creating direct route - insufficient time for optimization');
-    return createDirectJourney(startPlace, endPlace, directTravelData);
-  }
+    
+    return createDirectJourney(startPlace, endPlace, directTravelData);  }
   // Choose algorithm based on journey characteristics and resource availability
   const resourceAbundance = (maxDuration >= 360 && maxBudget >= 800);
   const timeVsBudgetRatio = maxDuration / (maxBudget || 1);
   
-  console.log(`🔍 Algorithm selection: Duration=${maxDuration}min, Budget=${maxBudget}, ResourceAbundance=${resourceAbundance}, Ratio=${timeVsBudgetRatio.toFixed(2)}`);
+  // console.log(`Journey mode selection: resourceAbundance=${resourceAbundance}, timeVsBudgetRatio=${timeVsBudgetRatio}`);
   
   // For long journeys (6+ hours) OR abundant resources, always prefer Dijkstra (more generous)
   // For short/constrained journeys, use Floyd-Warshall (more precise)
   if (maxDuration >= 360 || resourceAbundance || timeVsBudgetRatio > 0.8) {
-    console.log('📊 Using Dijkstra-based approach for resource-abundant/long journey');
+    
     return createOptimalPointToPointWithDijkstra(places, preferences, maxDuration, maxBudget, startIndex, endIndex, distanceMatrix);
   } else if (places.length <= 15) {
-    console.log('📊 Using Floyd-Warshall for precise optimization (small dataset)');
     return createOptimalPointToPointWithFloydWarshall(places, preferences, maxDuration, maxBudget, startIndex, endIndex, distanceMatrix);
   } else {
-    console.log('📊 Using Dijkstra-based approach for larger dataset');
+    
     return createOptimalPointToPointWithDijkstra(places, preferences, maxDuration, maxBudget, startIndex, endIndex, distanceMatrix);
   }
 };
@@ -771,10 +754,10 @@ const createOptimalPointToPointWithFloydWarshall = (places, preferences, maxDura
   // Select best subset of intermediate stops using dynamic programming approach
   const optimalStops = selectOptimalStops(intermediateCandidates, startIndex, endIndex, distances, maxDuration, maxBudget, places);
   
-  // Build final path: start → optimal stops → end
+  // Build final path: start â†’ optimal stops â†’ end
   const fullPath = [startIndex, ...optimalStops, endIndex];
   
-  console.log(`🎯 Floyd-Warshall optimized path: ${fullPath.length} stops`);
+  
   return buildJourneyFromPath(fullPath, places, distanceMatrix);
 };
 
@@ -783,12 +766,12 @@ const createOptimalPointToPointWithFloydWarshall = (places, preferences, maxDura
  * WHY: Efficient for larger datasets while maximizing experience quality with surplus resources
  */
 const createOptimalPointToPointWithDijkstra = (places, preferences, maxDuration, maxBudget, startIndex, endIndex, distanceMatrix) => {
-  console.log(`🎯 Creating point-to-point journey: ${places[startIndex].name} → ${places[endIndex].name}`);
+  
   
   const intermediatePlaces = findGeographicallyRelevantPlaces(places, startIndex, endIndex, maxDuration, maxBudget);
   
   if (intermediatePlaces.length === 0) {
-    console.log('⚠️ No intermediate places found, creating direct journey');
+    
     const startPlace = places[startIndex];
     const endPlace = places[endIndex];
     const directTravelData = distanceMatrix.rows[startIndex].elements[endIndex];
@@ -808,7 +791,7 @@ const createOptimalPointToPointWithDijkstra = (places, preferences, maxDuration,
     maxDuration,
     { time: currentTime, budget: currentCost }
   );
-  
+  // console.log('Log statement');
   const { distances: endDistances } = dijkstra(
     endIndex, 
     places, 
@@ -818,7 +801,7 @@ const createOptimalPointToPointWithDijkstra = (places, preferences, maxDuration,
     maxDuration,
     { time: 0, budget: 0 }
   );
-  
+  // console.log('Log statement');
   // Initialize route with START place
   const route = [places[startIndex]];
   const visited = new Set([startIndex, endIndex]);
@@ -830,7 +813,7 @@ const createOptimalPointToPointWithDijkstra = (places, preferences, maxDuration,
   const visitedTypes = new Set();
   places[startIndex].types.forEach(type => visitedTypes.add(type));
   
-  console.log(`🚀 Starting optimization with ${intermediatePlaces.length} intermediate candidates`);
+  
     // Enhanced greedy optimization for maximum place inclusion in long journeys
   while (intermediatePlaces.length > 0) {
     const resourceSurplus = calculateResourceSurplus(maxBudget, maxDuration, totalCost, totalTime);
@@ -890,12 +873,12 @@ const createOptimalPointToPointWithDijkstra = (places, preferences, maxDuration,
       // Enhanced scoring for maximum place inclusion
       const pathEfficiency = 1 / (startDistances[stopIndex] + endDistances[stopIndex] + 1);
       const placeScore = calculateMultiObjectivePlaceScore(
-        places[stopIndex], 
-        preferences, 
+        places[stopIndex],
+        preferences,
         travelData.distance.value,
         resourceSurplus
       );
-      
+  // console.log('Log statement');
       // Diversity bonus with enhanced weighting for variety
       let diversityBonus = 0;
       if (avgSurplus > 0.2) {
@@ -970,6 +953,7 @@ const createOptimalPointToPointWithDijkstra = (places, preferences, maxDuration,
           visitedTypes, 
           avgSurplus
         );
+  // console.log('Log statement');
         selectedCandidate = bestCandidates.find(c => c.stopIndex === diverseChoice);
       } else {
         // For lower surplus, prefer the highest scoring candidate
@@ -987,7 +971,7 @@ const createOptimalPointToPointWithDijkstra = (places, preferences, maxDuration,
     const travelData = distanceMatrix.rows[currentIndex].elements[stopIndex];
     
     // Log selection reasoning for transparency
-    console.log(`✅ Selected: ${nextPlace.name} (Score: ${selectedCandidate.score.toFixed(2)}, Rating: ${selectedCandidate.rating}, Pop: ${selectedCandidate.popularity}, Div: ${selectedCandidate.diversity.toFixed(1)}, Qty: ${selectedCandidate.quantity})`);
+    // console.log('Selection log');
     
     route.push(nextPlace);
     visited.add(stopIndex);
@@ -997,11 +981,10 @@ const createOptimalPointToPointWithDijkstra = (places, preferences, maxDuration,
     totalCost += nextPlace.estimatedCost || 0;
     currentIndex = stopIndex;
     
-    // Track diversity
-    nextPlace.types.forEach(type => visitedTypes.add(type));
-    
-    console.log(`✅ Added intermediate stop: ${nextPlace.name} (Rating: ${nextPlace.rating}, Reviews: ${nextPlace.user_ratings_total || 0}, Surplus: ${(avgSurplus * 100).toFixed(1)}%)`);
-    console.log(`   Route progress: ${route.length - 1} intermediate stops, ${totalTime.toFixed(0)}/${maxDuration}min, ${totalCost}/${maxBudget} budget`);  }
+    // Track diversity    nextPlace.types.forEach(type => visitedTypes.add(type));
+    // console.log('Progress log');
+    // console.log('Budget log');
+  }
   
   // Always add END place
   route.push(places[endIndex]);
@@ -1011,7 +994,7 @@ const createOptimalPointToPointWithDijkstra = (places, preferences, maxDuration,
   const optimizedIndices = optimizeRouteOrder(places, distanceMatrix, startIndex, endIndex, routeIndices);
   
   const finalSurplus = calculateResourceSurplus(maxBudget, maxDuration, totalCost, totalTime);
-  console.log(`🎯 Optimized point-to-point journey: ${route.length} places (${route[0].name} → ${route[route.length-1].name}), ${(finalSurplus.budget * 100).toFixed(1)}% budget surplus`);
+  // console.log('Surplus log');
   
   return buildJourneyFromPath(optimizedIndices, places, distanceMatrix);
 };
@@ -1100,13 +1083,13 @@ const findOptimalIntermediateStops = (places, startIndex, endIndex, distances, p
 const selectOptimalStops = (candidates, startIndex, endIndex, distances, maxDuration, maxBudget, places) => {
   if (candidates.length === 0) return [];
   
-  console.log(`🎯 Selecting stops from ${candidates.length} candidates for ${maxDuration}min journey with ${maxBudget} budget`);
+  
   
   // Calculate resource abundance for decision making
   const resourceAbundance = (maxDuration >= 360 && maxBudget >= 800) ? 'high' : 
                            (maxDuration >= 240 && maxBudget >= 400) ? 'medium' : 'low';
   
-  console.log(`📊 Resource abundance: ${resourceAbundance}`);
+  
   
   // Simplified greedy selection with generous constraint checking
   const selected = [];
@@ -1120,13 +1103,12 @@ const selectOptimalStops = (candidates, startIndex, endIndex, distances, maxDura
   
   const maxAllowedTime = maxDuration * timeBuffer;
   const maxAllowedBudget = maxBudget * budgetBuffer;
-  
-  console.log(`💰 Using ${(timeBuffer * 100).toFixed(0)}% time budget (${maxAllowedTime}min) and ${(budgetBuffer * 100).toFixed(0)}% cost budget (${maxAllowedBudget})`);
+  // console.log('Buffer log');
   
   for (const candidateIndex of candidates) {
     const candidate = places[candidateIndex];
     
-    // Estimate time: current → candidate → remaining journey to end
+    // Estimate time: current â†’ candidate â†’ remaining journey to end
     const timeToCand = getEstimatedTravelTime(distances, currentIndex, candidateIndex);
     const timeFromCand = getEstimatedTravelTime(distances, candidateIndex, endIndex);
     const visitTime = candidate.estimatedVisitDuration || 30;
@@ -1134,21 +1116,19 @@ const selectOptimalStops = (candidates, startIndex, endIndex, distances, maxDura
     
     const projectedTime = totalTime + timeToCand + visitTime + timeFromCand + (places[endIndex].estimatedVisitDuration || 30);
     const projectedCost = totalCost + visitCost + (places[endIndex].estimatedCost || 0);
-    
-    console.log(`🔍 Evaluating ${candidate.name}: Time ${projectedTime.toFixed(0)}/${maxAllowedTime}, Cost ${projectedCost}/${maxAllowedBudget}`);
+    // console.log('Budget log');
     
     if (projectedTime <= maxAllowedTime && projectedCost <= maxAllowedBudget) {
       selected.push(candidateIndex);
       totalTime += timeToCand + visitTime;
       totalCost += visitCost;
       currentIndex = candidateIndex;
-      console.log(`✅ Selected ${candidate.name} (Total: ${selected.length} stops)`);
     } else {
-      console.log(`❌ Rejected ${candidate.name} - exceeds constraints`);
+      // console.log('Skipping candidate due to resource constraints');
     }
   }
   
-  console.log(`🎉 Final selection: ${selected.length} intermediate stops for Floyd-Warshall journey`);
+  
   return selected;
 };
 
@@ -1175,7 +1155,7 @@ const findGeographicallyRelevantPlaces = (places, startIndex, endIndex, maxDurat
     maxDeviation = 2.2; // Conservative for short/constrained journeys
   }
   
-  console.log(`🗺️ Finding geographic candidates: Long journey=${isLongJourney}, Ample resources=${hasAmpleResources}, Resource abundant=${resourceAbundant}, Max deviation=${maxDeviation}x`);
+  
   
   for (let i = 0; i < places.length; i++) {
     if (i === startIndex || i === endIndex) continue;
@@ -1192,9 +1172,13 @@ const findGeographicallyRelevantPlaces = (places, startIndex, endIndex, maxDurat
       candidates.push(i);
     }
   }
-  
-  console.log(`🎯 Geographic filtering: Found ${candidates.length} candidates out of ${places.length - 2} possible places (max deviation: ${maxDeviation}x)`);
-  return candidates;
+
+  // Sort candidates by distance to start point for better path efficiency
+  return candidates.sort((a, b) => {
+    const distA = calculateDistance(startPlace.location, places[a].location);
+    const distB = calculateDistance(startPlace.location, places[b].location);
+    return distA - distB;
+  });
 };
 
 /**
@@ -1266,7 +1250,7 @@ const getEstimatedTravelTime = (distances, fromIndex, toIndex) => {
 
 /**
  * Smart place selection to minimize API calls while maximizing journey quality
- * WHY: Reduces distance matrix size from N×N to manageable subset
+ * WHY: Reduces distance matrix size from NÃ—N to manageable subset
  * STRATEGY: Geographic clustering + rating-based filtering + diversity ensure optimal selection
  */
 /**
@@ -1343,9 +1327,9 @@ const filterWorkAndAgencyPlaces = (places) => {
       type !== 'establishment' && 
       type !== 'point_of_interest'
     );
-    
+  // console.log('Log statement');
     if (hasWorkType) {
-      console.log(`🚫 Filtered out (work type): ${place.name} - Types: ${place.types.join(', ')}`);
+      // console.log('Place filter log');
       return false;
     }
     
@@ -1354,7 +1338,7 @@ const filterWorkAndAgencyPlaces = (places) => {
     const matchesWorkPattern = workKeywordPatterns.some(pattern => pattern.test(placeName));
     
     if (matchesWorkPattern) {
-      console.log(`🚫 Filtered out (work pattern): ${place.name}`);
+      // console.log('Place filter log');
       return false;
     }
     
@@ -1365,7 +1349,7 @@ const filterWorkAndAgencyPlaces = (places) => {
 const smartPlaceSelection = async (places, preferences, maxBudget, startPoint, endPoint, journeyMode, maxDuration) => {
   // Step 0: Filter out agency buildings, offices, and work-related places first
   const touristFocusedPlaces = filterWorkAndAgencyPlaces(places);
-  console.log(`🏢 Filtered out ${places.length - touristFocusedPlaces.length} work/agency places, ${touristFocusedPlaces.length} tourist-focused places remaining`);
+  
   
   // Google Maps API safe limit: 10 places (10x10 = 100 elements) to avoid MAX_ELEMENTS_EXCEEDED
   // For long journeys, we still aim for 7-8 places minimum, but never exceed 10
@@ -1389,13 +1373,13 @@ const smartPlaceSelection = async (places, preferences, maxBudget, startPoint, e
     targetPlaces = Math.min(targetPlaces + 1, API_SAFE_LIMIT);
   }
   
-  console.log(`📊 Journey: ${maxDuration}min, Budget: ${maxBudget}, Target places: ${targetPlaces} (API limit: ${API_SAFE_LIMIT})`);
+  // If we already have enough tourist-focused places, return them directly);
   
   if (touristFocusedPlaces.length <= targetPlaces) {
-    console.log(`📊 Place count (${touristFocusedPlaces.length}) within target, using all places`);
+     // console.log('Target log');
     return touristFocusedPlaces;
   }
-  console.log(`🎯 Optimizing ${touristFocusedPlaces.length} places down to ${targetPlaces} for API efficiency`);
+  
   
   // Step 1: Add geographic relevance scores with more generous criteria
   const scoredPlaces = touristFocusedPlaces.map(place => {
@@ -1453,7 +1437,7 @@ const smartPlaceSelection = async (places, preferences, maxBudget, startPoint, e
     selectedPlaces.push(...remaining.slice(0, slotsLeft));
   }
   
-  console.log(`✅ Selected ${selectedPlaces.length} places with type distribution:`, typeTracker);
+  
   return selectedPlaces;
 };
 
@@ -1504,17 +1488,18 @@ const getMainPlaceType = (types) => {
  * WHY: Minimizes API calls while ensuring we have necessary distance data
  * STRATEGY: Builds matrix progressively based on actual route needs
  */
-const getOptimizedDistanceMatrix = async (places, startPoint, endPoint, journeyMode) => {  try {
-    console.log(`🔍 Getting optimized distance matrix for ${places.length} places`);
+const getOptimizedDistanceMatrix = async (places, startPoint, endPoint, journeyMode) => {
+  try {
+    
     
     // Use more generous limits for better journey quality
     if (places.length <= 20) {
-      console.log('📊 Place set within limits - getting full distance matrix');
+      
       return await getDistanceMatrix(places);
     }
     
     // For larger sets, use progressive approach
-    console.log('🎯 Using progressive distance matrix building');
+    
     
     // Step 1: Get starting distances (from start point to all places)
     const startDistances = await getDistancesFromPoint(startPoint, places);
@@ -1529,18 +1514,18 @@ const getOptimizedDistanceMatrix = async (places, startPoint, endPoint, journeyM
     return buildProgressiveDistanceMatrix(places, startDistances, endDistances);
     
   } catch (error) {
-    console.error('❌ Error in getOptimizedDistanceMatrix:', error);
+    console.error('âŒ Error in getOptimizedDistanceMatrix:', error);
     
     // Ultimate fallback - use mock data
-    console.log('⚠️ Using mock distance matrix as fallback');
+    
     const { createMockDistanceMatrix } = await import('./distanceCalculator.js');
     return createMockDistanceMatrix(places);
   }
 };
 
 /**
- * Get distances from a single point to all places (1×N instead of N×N)
- * WHY: Dramatically reduces API calls from N² to N
+ * Get distances from a single point to all places (1Ã—N instead of NÃ—N)
+ * WHY: Dramatically reduces API calls from NÂ² to N
  */
 const getDistancesFromPoint = async (point, places) => {
   const locations = places.map(place => place.location);
@@ -1599,8 +1584,7 @@ const buildProgressiveDistanceMatrix = (places, startDistances, endDistances) =>
     
     rows.push({ elements });
   }
-  
-  console.log(`✅ Built progressive distance matrix (${n}×${n}) with intelligent approximation`);
+   // console.log('Approximation log');
   
   return {
     status: 'OK',
@@ -1656,19 +1640,19 @@ const ensureStartEndPointsInJourney = (journey, startPoint, endPoint, places) =>
     stop.isStartPoint || 
     (stop.location && calculateDistance(stop.location, startPoint) < 100) // Within 100m
   );
-  
+  // console.log('Log statement');
   // Check if end point is included (for point-to-point journeys)
   const hasEndPoint = !endPoint || actualStops.some(stop => 
     stop.isEndPoint || 
     (stop.location && calculateDistance(stop.location, endPoint) < 100) // Within 100m
   );
-  
+  // console.log('Log statement');
   if (hasStartPoint && hasEndPoint) {
-    console.log(`✅ Start and end points confirmed in journey (${actualStops.length} stops)`);
+    // console.log('Journey is valid');
     return journey;
   }
   
-  console.log(`⚠️ Missing start/end points in journey - hasStart: ${hasStartPoint}, hasEnd: ${hasEndPoint}`);
+  
   
   // If missing, add virtual start/end points based on user coordinates
   const enrichedJourney = [];
@@ -1730,14 +1714,14 @@ const ensureStartEndPointsInJourney = (journey, startPoint, endPoint, places) =>
     });
   }
   
-  console.log(`🔧 Enriched journey with missing start/end points`);
+  
   return enrichedJourney;
 };
 
 const optimizeRouteOrder = (places, distanceMatrix, startIndex, endIndex, routeIndices) => {
   if (routeIndices.length <= 1) return routeIndices;
   
-  console.log(`🔧 Optimizing route order for ${routeIndices.length} total places`);
+  
   
   // Extract intermediate places (excluding start and end)
   const intermediatePlaces = routeIndices.slice(1, -1);
@@ -1780,8 +1764,7 @@ const optimizeRouteOrder = (places, distanceMatrix, startIndex, endIndex, routeI
   const originalDistance = calculateTotalRouteDistance(routeIndices, distanceMatrix);
   const optimizedDistance = calculateTotalRouteDistance(optimized, distanceMatrix);
   const improvement = ((originalDistance - optimizedDistance) / originalDistance * 100).toFixed(1);
-  
-  console.log(`📈 Route optimization: ${improvement}% distance reduction (${originalDistance.toFixed(0)}m → ${optimizedDistance.toFixed(0)}m)`);
+  // console.log('Distance log');
   
   return optimized;
 };
@@ -1801,4 +1784,5 @@ const calculateTotalRouteDistance = (routeIndices, distanceMatrix) => {
   }
   return totalDistance;
 };
+
 

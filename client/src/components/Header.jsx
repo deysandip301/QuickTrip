@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { handleSignOut } from '../services/firebase';
 
-const Header = ({ user, currentPage, setCurrentPage, onNavigateHome, onNavigateSaved, onNavigateAuth }) => {
+const Header = ({ user, onNavigateHome, onNavigateSaved, onNavigateAuth }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
@@ -13,15 +16,16 @@ const Header = ({ user, currentPage, setCurrentPage, onNavigateHome, onNavigateS
       console.error('Error signing out:', error);
     }
   };
-
   const getPageTitle = () => {
-    switch (currentPage) {
-      case 'home':
+    switch (location.pathname) {
+      case '/':
         return 'Discover Amazing Places';
-      case 'planning':
+      case '/planning/currentLocation':
+      case '/planning/customRoute':
         return 'Plan Your Perfect Journey';
-      case 'result':
-        return 'Your Personalized Itinerary';      case 'saved':
+      case '/journey-result':
+        return 'Your Personalized Itinerary';
+      case '/saved-journeys':
         return 'Your Saved Adventures';
       default:
         return 'Smart Travel Companion';
@@ -29,11 +33,7 @@ const Header = ({ user, currentPage, setCurrentPage, onNavigateHome, onNavigateS
   };
 
   const handleHomeClick = () => {
-    if (onNavigateHome) {
-      onNavigateHome();
-    } else {
-      setCurrentPage('home');
-    }
+    navigate('/');
     setIsMenuOpen(false);
   };
 
@@ -41,7 +41,7 @@ const Header = ({ user, currentPage, setCurrentPage, onNavigateHome, onNavigateS
     if (onNavigateSaved) {
       onNavigateSaved();
     } else {
-      setCurrentPage('saved');
+      navigate('/saved-journeys');
     }
     setIsMenuOpen(false);
   };
@@ -72,7 +72,7 @@ const Header = ({ user, currentPage, setCurrentPage, onNavigateHome, onNavigateS
         <nav className="header-nav">
           <button
             onClick={handleHomeClick}
-            className={`header-nav-item ${currentPage === 'home' ? 'active' : ''}`}
+            className={`header-nav-item ${location.pathname === '/' ? 'active' : ''}`}
           >
             <span className="header-nav-icon">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,7 +84,7 @@ const Header = ({ user, currentPage, setCurrentPage, onNavigateHome, onNavigateS
           
           <button
             onClick={handleSavedClick}
-            className={`header-nav-item ${currentPage === 'saved' ? 'active' : ''}`}
+            className={`header-nav-item ${location.pathname === '/saved-journeys' ? 'active' : ''}`}
           >
             <span className="header-nav-icon">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -154,7 +154,7 @@ const Header = ({ user, currentPage, setCurrentPage, onNavigateHome, onNavigateS
                 if (onNavigateAuth) {
                   onNavigateAuth();
                 } else {
-                  setCurrentPage('auth');
+                  navigate('/auth');
                 }
               }}
               className="header-login-btn"
@@ -186,7 +186,7 @@ const Header = ({ user, currentPage, setCurrentPage, onNavigateHome, onNavigateS
           <div className="header-mobile-nav">
             <button
               onClick={handleHomeClick}
-              className={`header-mobile-item ${currentPage === 'home' ? 'active' : ''}`}
+              className={`header-mobile-item ${location.pathname === '/' ? 'active' : ''}`}
             >
               <span className="header-mobile-icon">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -198,7 +198,7 @@ const Header = ({ user, currentPage, setCurrentPage, onNavigateHome, onNavigateS
             
             <button
               onClick={handleSavedClick}
-              className={`header-mobile-item ${currentPage === 'saved' ? 'active' : ''}`}
+              className={`header-mobile-item ${location.pathname === '/saved-journeys' ? 'active' : ''}`}
             >
               <span className="header-mobile-icon">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -205,49 +205,23 @@ const filterAndProcessPlaces = (rawPlaces) => {
             photo_reference: photo.photo_reference,
             width: photo.width,
             height: photo.height,
-            html_attributions: photo.html_attributions
+            html_attributions: photo.html_attributions,
+            // Generate photo URL with good quality for journey display
+            url: `https://maps.googleapis.com/maps/api/place/photo?maxwidth=600&photo_reference=${photo.photo_reference}&key=${API_KEY}`
           })) : [],
           price_level: place.price_level || null,
           opening_hours: place.opening_hours || null,
           permanently_closed: place.permanently_closed || false,
           plus_code: place.plus_code || null
         });
-        
-        console.log(`✅ ACCEPTED: ${place.name} (Rating: ${place.rating}, Reviews: ${place.user_ratings_total}, Types: ${place.types.slice(0, 3).join(', ')})`);
+          // Place accepted
       } else {
-        // Log why this place was filtered out
-        if (!hasPreferredType) {
-          console.log(`❌ Filtered out (no preferred type): ${place.name} - Types: ${place.types.join(', ')}`);
-        } else if (hasExcludedType) {
-          console.log(`❌ Filtered out (excluded type): ${place.name} - Types: ${significantExcludedTypes.join(', ')} in ${place.types.join(', ')}`);
-        } else if (!hasAcceptableQuality) {
-          console.log(`❌ Filtered out (quality criteria): ${place.name} - Rating: ${place.rating || 'N/A'}, Reviews: ${place.user_ratings_total || 0}`);
-        }
+        // Place filtered out for quality, type, or preference reasons
         filteredOutCount++;
       }
-    } else if (uniquePlaces.has(place.place_id)) {
-      console.log(`⚠️ Duplicate place skipped: ${place.name}`);
-    } else if (place.business_status !== 'OPERATIONAL') {
-      console.log(`⚠️ Non-operational place skipped: ${place.name} (Status: ${place.business_status})`);
     }
   });
-
   const finalPlaces = Array.from(uniquePlaces.values());
-  console.log(`After filtering: ${finalPlaces.length} relevant places (filtered out: ${filteredOutCount})`);
-  
-  // Log some examples of the places found
-  if (finalPlaces.length > 0) {
-    console.log('Sample places found:');
-    finalPlaces.slice(0, 3).forEach(place => {
-      console.log(`  - ${place.name} (Rating: ${place.rating}, Reviews: ${place.user_ratings_total}, Types: ${place.types.join(', ')})`);
-    });
-  } else {
-    console.log('⚠️ No places found after filtering. This might indicate:');
-    console.log('   - Search radius too small');
-    console.log('   - Filtering criteria too strict');
-    console.log('   - No places of selected types in the area');
-    console.log('   - Google Places API issues');
-  }
   
   return finalPlaces;
 };
@@ -263,13 +237,6 @@ const filterAndProcessPlaces = (rawPlaces) => {
  */
 export const getPlaces = async (location, preferences, startPoint = null, endPoint = null, journeyMode = 'currentLocation') => {
   try {
-    console.log('🔍 Starting place search with parameters:');
-    console.log(`  Location: ${location}`);
-    console.log(`  Journey Mode: ${journeyMode}`);
-    console.log(`  Start Point: ${startPoint ? `${startPoint.lat}, ${startPoint.lng}` : 'Not provided'}`);
-    console.log(`  End Point: ${endPoint ? `${endPoint.lat}, ${endPoint.lng}` : 'Not provided'}`);
-    console.log(`  Preferences: ${Object.keys(preferences).filter(key => preferences[key]).join(', ')}`);
-
     let center;
     let searchRadius = 10000; // Default 10km radius
     let startPlaceDetails = null;
@@ -281,11 +248,9 @@ export const getPlaces = async (location, preferences, startPoint = null, endPoi
       const lat = parseFloat(coordinateMatch[1]);
       const lng = parseFloat(coordinateMatch[2]);
       center = { lat, lng };
-      console.log(`📍 Using coordinates from location parameter: ${lat}, ${lng}`);
       
       // Fetch start point details using reverse geocoding
       try {
-        console.log('🔎 Fetching start point details via reverse geocoding...');
         const startGeocode = await client.reverseGeocode({
           params: { latlng: center, key: API_KEY }
         });
@@ -304,16 +269,14 @@ export const getPlaces = async (location, preferences, startPoint = null, endPoi
             vicinity: result.formatted_address,
             isStartPoint: true
           };
-          console.log(`✅ Start point details: ${startPlaceDetails.name}`);
         }
       } catch (error) {
-        console.warn('⚠️ Could not fetch start point details:', error.message);
+        console.warn('Could not fetch start point details:', error.message);
       }
     } else if (journeyMode === 'currentLocation' && startPoint) {
       // For current location mode, search around the start point
       center = startPoint;
       searchRadius = 25000; // 25km radius for circular journeys
-      console.log(`🌍 Searching for places around current location: ${startPoint.lat}, ${startPoint.lng}`);
     } else if (journeyMode === 'customRoute' && startPoint && endPoint) {
       // For custom route mode, search in the area between start and end points
       center = {
@@ -569,6 +532,7 @@ export const getPlaceDetails = async (placeId) => {
       return null;
     }
 
+    console.log(`🔍 Fetching place details for: ${placeId}`);
     const result = await client.placeDetails({
       params: {
         place_id: placeId,
@@ -582,8 +546,10 @@ export const getPlaceDetails = async (placeId) => {
       },
     });
 
+    console.log(`📊 API Response status: ${result.data.status}`);
     if (result.data.status === 'OK') {
       const place = result.data.result;
+      console.log(`📸 Found ${place.photos?.length || 0} photos for ${place.name}`);
       return {
         placeId: place.place_id,
         name: place.name,
@@ -595,8 +561,10 @@ export const getPlaceDetails = async (placeId) => {
           width: photo.width,
           height: photo.height,
           html_attributions: photo.html_attributions,
-          // Generate photo URL with higher quality
-          url: `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${API_KEY}`
+          // Generate photo URL with high quality for detailed view
+          url: `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${API_KEY}`,
+          // Also provide a smaller version for thumbnails
+          thumbnailUrl: `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photo.photo_reference}&key=${API_KEY}`
         })) : [],
         types: place.types,
         price_level: place.price_level,

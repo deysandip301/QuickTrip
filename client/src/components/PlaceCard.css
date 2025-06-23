@@ -217,6 +217,15 @@
   height: 100%;
 }
 
+.place-card__photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+  display: block;
+  border-radius: 8px;
+}
+
 .place-card__photo-info {
   position: absolute;
   top: 6px;
@@ -382,6 +391,245 @@
   font-size: 16px;
 }
 
+/* Featured Photo */
+.place-card__featured-photo {
+  margin: 12px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.place-card__featured-photo-container {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  overflow: hidden;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.place-card__featured-photo-container:hover {
+  cursor: pointer;
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.place-card__featured-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.place-card__featured-photo-container:hover .place-card__featured-photo-img {
+  transform: scale(1.05);
+}
+
+.place-card__featured-photo-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.place-card__featured-photo-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.place-card__photo-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 4px 8px;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+}
+
+.place-card__photo-badge-icon {
+  font-size: 0.875rem;
+}
+
+.place-card__photo-quality {
+  background: rgba(255, 255, 255, 0.9);
+  color: #374151;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+
+.place-card__view-more-photos {
+  background: rgba(59, 130, 246, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.place-card__featured-photo-container:hover .place-card__view-more-photos {
+  background: rgba(59, 130, 246, 1);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.place-card__featured-photo-placeholder {
+  height: 120px;
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #6b7280;
+}
+
+.place-card__featured-photo-placeholder-icon {
+  font-size: 2rem;
+  opacity: 0.7;
+}
+
+.place-card__featured-photo-placeholder-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.place-card__photo-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  border-radius: 8px;
+}
+
+.place-card__photo-loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: photoSpinner 1s linear infinite;
+}
+
+@keyframes photoSpinner {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.place-card__featured-photo-placeholder-subtitle {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin-top: 0.25rem;
+}
+
+/* Google Places Photo Attribution */
+.place-card__photo-attribution {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.place-card__photo-attribution-notice {
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.place-card__photo-attribution-notice span {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* New elegant photo placeholder for places without photos */
+.place-card__photo-placeholder {
+  height: 120px;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.place-card__photo-placeholder-content {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+}
+
+.place-card__photo-placeholder-icon {
+  font-size: 2.5rem;
+  opacity: 0.6;
+  color: #6366f1;
+}
+
+.place-card__photo-placeholder-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.place-card__photo-placeholder-main {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.place-card__photo-placeholder-sub {
+  font-size: 0.75rem;
+  color: #64748b;
+  opacity: 0.8;
+}
+
+/* Hover effect for photo placeholder */
+.place-card__photo-placeholder:hover {
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  border-color: #cbd5e1;
+}
+
+.place-card__photo-placeholder:hover .place-card__photo-placeholder-icon {
+  opacity: 0.8;
+  transform: scale(1.05);
+  transition: all 0.2s ease;
+}
+
 /* Responsive Design */
 @media (max-width: 640px) {
   .place-card {
@@ -406,6 +654,22 @@
   
   .place-card__meta {
     gap: 8px;
+  }
+  
+  .place-card__featured-photo-container {
+    height: 160px;
+  }
+  
+  .place-card__featured-photo-overlay {
+    padding: 8px;
+  }
+  
+  .place-card__photo-badge {
+    font-size: 0.8rem;
+  }
+  
+  .place-card__featured-photo-placeholder {
+    height: 100px;
   }
 }
 

@@ -1,15 +1,69 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
+import { useAppContext } from '../context/AppContext';
+import { saveJourney } from '../services/firebase';
+import { loadJourneyFromUrl } from '../utils/urlState';
 import JourneyList from './JourneyList';
 import MapDisplay from './MapDisplay';
 import { formatTime, calculateTotalTravelTime, formatDistance, calculateTotalDistance, generateGoogleMapsRoute } from '../utils/timeUtils';
 import { enrichJourneyPlaces } from '../utils/placeUtils';
 import './JourneyResultPage.css';
 
-const JourneyResultPage = ({ journey, onBack, onSave, center, user, savedJourneySummary }) => {
+const JourneyResultPage = () => {
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const { 
+    journey, 
+    navigateToHome, 
+    navigateBack,
+    center, 
+    user, 
+    savedJourneySummary,
+    navigateToAuth,
+    setError,
+    setJourney,
+    setSavedJourneySummary,
+    setCenter
+  } = useAppContext();
+  // Check if journey data was passed via navigation state or URL
+  useEffect(() => {
+    // First, try to load from URL parameters
+    const urlJourneyData = loadJourneyFromUrl(searchParams);
+    if (urlJourneyData && journey.length === 0) {
+      if (urlJourneyData.journey && urlJourneyData.journey.length > 0) {
+        setJourney(urlJourneyData.journey);
+        setSavedJourneySummary(urlJourneyData.summary);
+        if (urlJourneyData.center) {
+          setCenter(urlJourneyData.center);
+        }
+        return;
+      }
+    }
+
+    // Fallback to navigation state
+    const stateJourneyData = location.state?.journeyData;
+    if (stateJourneyData && journey.length === 0) {
+      if (stateJourneyData.isSavedJourney) {
+        setJourney(stateJourneyData.journey);
+        setSavedJourneySummary(stateJourneyData.summary);
+        setCenter(stateJourneyData.center);
+      } else {
+        setJourney(stateJourneyData);
+        setSavedJourneySummary(null);
+      }
+    }
+  }, [location.state, journey.length, setJourney, setSavedJourneySummary, setCenter, searchParams]);
+
   // Enrich journey with enhanced place data for better display
   const enrichedJourney = enrichJourneyPlaces(journey);
 
   const handleSaveJourney = async () => {
+    if (!user) {
+      // User not logged in, navigate to auth with return path
+      navigateToAuth(null, '/journey-result');
+      return;
+    }
+
     // Calculate totals for the summary
     const totalTravelTimeMinutes = calculateTotalTravelTime(enrichedJourney);
     const totalDistanceKm = calculateTotalDistance(enrichedJourney);
@@ -28,18 +82,22 @@ const JourneyResultPage = ({ journey, onBack, onSave, center, user, savedJourney
       }
     };
     
-    // Call the onSave callback (which handles auth check in App.jsx)
-    if (onSave) {
-      onSave(journeyData);
+    try {
+      await saveJourney(journeyData, user);
+      setError('');
+      alert('Journey saved successfully!');
+    } catch (err) {
+      console.error('Save error:', err);
+      setError('Failed to save journey. Please try again.');
     }
   };
   // Ensure journey is an array and add defensive programming
-  if (!Array.isArray(journey)) {
+  if (!Array.isArray(journey) || journey.length === 0) {
     return (
       <div className="journey-result-error">
-        <h2>Error: Invalid Journey Data</h2>
-        <p>The journey data is not in the expected format.</p>
-        <button onClick={onBack}>Back to Home</button>
+        <h2>No Journey Data</h2>
+        <p>No journey data available. Please generate a new journey.</p>
+        <button onClick={navigateToHome}>Back to Home</button>
       </div>
     );
   }
@@ -73,15 +131,14 @@ const JourneyResultPage = ({ journey, onBack, onSave, center, user, savedJourney
   return (
     <div className="journey-result-container">
       {/* Header */}
-      <div className="journey-result-header">
-        <button
-          onClick={onBack}
+      <div className="journey-result-header">        <button
+          onClick={navigateBack}
           className="journey-result-back-btn"
         >
           <svg className="journey-result-back-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          <span>Back to Home</span>
+          <span>Back</span>
         </button>
         
         <div className="journey-result-title-section">
@@ -218,9 +275,8 @@ const JourneyResultPage = ({ journey, onBack, onSave, center, user, savedJourney
           </div>
         </div>
       </div>{/* Action Buttons */}
-      <div className="journey-result-actions">
-        <button
-          onClick={onBack}
+      <div className="journey-result-actions">        <button
+          onClick={navigateToHome}
           className="journey-result-action-btn secondary"
         >
           Plan Another Journey

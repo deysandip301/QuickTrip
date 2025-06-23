@@ -1,6 +1,9 @@
 import React from 'react';
+import { useAppContext } from '../context/AppContext';
 
-const HomePage = ({ onModeSelect }) => {
+const HomePage = () => {
+  const { navigateToPlanning } = useAppContext();
+
   return (
     <div className="home-page">
       <div className="home-container">
@@ -11,7 +14,8 @@ const HomePage = ({ onModeSelect }) => {
           </div>
           <h1 className="hero-title">
             Welcome to QuickTrip
-          </h1>          <p className="hero-description">
+          </h1>
+          <p className="hero-description">
             Discover amazing places and create unforgettable journeys with our smart trip planner. 
             Let us help you explore your city like never before!
           </p>
@@ -21,7 +25,7 @@ const HomePage = ({ onModeSelect }) => {
         <div className="mode-grid">
           {/* Current Location Mode */}
           <div 
-            onClick={() => onModeSelect('currentLocation')}
+            onClick={() => navigateToPlanning('currentLocation')}
             className="mode-card"
           >
             <div className="mode-content">
@@ -54,9 +58,8 @@ const HomePage = ({ onModeSelect }) => {
             </div>
           </div>
 
-          {/* Custom Route Mode */}
-          <div 
-            onClick={() => onModeSelect('customRoute')}
+          {/* Custom Route Mode */}          <div 
+            onClick={() => navigateToPlanning('customRoute')}
             className="mode-card"
           >
             <div className="mode-content">

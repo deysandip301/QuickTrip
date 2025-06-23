@@ -133,11 +133,11 @@ const JourneyList = ({ journey, loading, error }) => {
                     🚗 {formatTravelTime(item.duration)} • {formatDistance(parseDistance(item.distance))}
                   </p>
                 </div>
-              </div>            ) : (
-              <PlaceCard 
+              </div>            ) : (              <PlaceCard 
                 place={item}
                 isExpanded={expandedPlaces.has(item.placeId)}
                 onToggleExpand={togglePlaceExpansion}
+                showPhotos={true}
               />
             )}
           </div>

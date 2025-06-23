@@ -76,9 +76,9 @@ export const enrichJourneyPlaces = (journey) => {
   return journey.map(item => {
     if (item.isTravelLeg) return item;
     
+    // Simple enrichment - just add description if missing, don't modify photos
     return {
       ...item,
-      ...ensurePlacePhotos(item),
       description: item.description || generateFallbackDescription(item)
     };
   });
@@ -98,9 +98,51 @@ export const isRichPlace = (place) => {
   );
 };
 
+/**
+ * Generates Google Places photo URL with specified dimensions
+ * @param {string} photoReference - Google Places photo reference
+ * @param {number} maxWidth - Maximum width for the photo
+ * @param {string} apiKey - Google Places API key (optional, handled server-side)
+ * @returns {string} Photo URL
+ */
+export const generatePhotoUrl = (photoReference, maxWidth = 600, apiKey = null) => {
+  if (!photoReference) return null;
+  
+  // If API key is available (client-side fallback)
+  if (apiKey) {
+    return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxWidth}&photo_reference=${photoReference}&key=${apiKey}`;
+  }
+  
+  // For server-generated URLs, return the reference (server handles URL generation)
+  return photoReference;
+};
+
+/**
+ * Validates and enriches photo data for consistent display
+ * @param {Array} photos - Array of photo objects
+ * @returns {Array} Enriched photo array
+ */
+export const enrichPhotoData = (photos) => {
+  if (!photos || !Array.isArray(photos)) return [];
+  
+  return photos.map((photo, index) => ({
+    ...photo,
+    // Ensure we have a display URL
+    displayUrl: photo.url || photo.thumbnailUrl || generatePhotoUrl(photo.photo_reference),
+    // Add quality classification
+    quality: photo.width > 800 ? 'HD' : photo.width > 400 ? 'HQ' : 'SD',
+    // Add aspect ratio for better layout
+    aspectRatio: photo.width && photo.height ? photo.width / photo.height : 1.33,
+    // Mark the first photo as featured
+    isFeatured: index === 0
+  }));
+};
+
 export default {
   ensurePlacePhotos,
   generateFallbackDescription,
   enrichJourneyPlaces,
-  isRichPlace
+  isRichPlace,
+  generatePhotoUrl,
+  enrichPhotoData
 };

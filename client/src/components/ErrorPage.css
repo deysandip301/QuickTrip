@@ -1,0 +1,121 @@
+.error-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.error-page-content {
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+  background: white;
+  padding: 3rem 2rem;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.error-page-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 2rem;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.error-page-icon svg {
+  width: 40px;
+  height: 40px;
+}
+
+.error-page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin-bottom: 1rem;
+}
+
+.error-page-message {
+  font-size: 1.1rem;
+  color: #4a5568;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.error-page-details {
+  font-size: 0.9rem;
+  color: #a0aec0;
+  margin-bottom: 2rem;
+  font-family: monospace;
+  background: #f7fafc;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #ff6b6b;
+}
+
+.error-page-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.error-page-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  min-width: 120px;
+}
+
+.error-page-btn-primary {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.error-page-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.error-page-btn-secondary {
+  background: #e2e8f0;
+  color: #4a5568;
+}
+
+.error-page-btn-secondary:hover {
+  background: #cbd5e0;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+  .error-page {
+    padding: 1rem;
+  }
+  
+  .error-page-content {
+    padding: 2rem 1.5rem;
+  }
+  
+  .error-page-title {
+    font-size: 1.75rem;
+  }
+  
+  .error-page-actions {
+    flex-direction: column;
+  }
+  
+  .error-page-btn {
+    width: 100%;
+  }
+}

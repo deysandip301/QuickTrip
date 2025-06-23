@@ -6,7 +6,6 @@ import { buildGraphAndFindJourney } from '../services/graphService.js';
 
 export const tripExperience = async (req, res) => {
     try {
-    console.log('Received request for trip experience:', req.body);
     const { location, preferences, duration, budget, startPoint, endPoint } = req.body;
 
     // --- Input Validation ---
@@ -15,24 +14,18 @@ export const tripExperience = async (req, res) => {
     }
     if (Object.keys(preferences).length === 0) {
       return res.status(400).json({ message: 'At least one preference must be selected.'});
-    }
-
-    // --- Determine Journey Mode ---
+    }    // --- Determine Journey Mode ---
     let journeyMode;
     if (startPoint && endPoint) {
       journeyMode = 'customRoute';
-      console.log('🗺️ Custom Route Mode: Journey from start point to end point');
     } else if (startPoint && !endPoint) {
       journeyMode = 'currentLocation';
-      console.log('📍 Current Location Mode: Circular journey from current location');
     } else {
       return res.status(400).json({ message: 'Start point is required. For custom routes, both start and end points are required.' });
-    }    // --- Step 1: Fetch POIs (Nodes) ---
-    // Get a list of potential places (Points of Interest) based on user preferences.
+    }// --- Step 1: Fetch POIs (Nodes) ---    // Get a list of potential places (Points of Interest) based on user preferences.
     // For current location mode, we fetch places around the start point
     // For custom route mode, we fetch places in the area between start and end points
     const places = await getPlaces(location, preferences, startPoint, endPoint, journeyMode);
-    console.log(`Found ${places.length} places matching criteria`);
     
     if (places.length === 0) {
       return res.status(404).json({ message: 'No places found matching your criteria. Try expanding your search area or selecting different interests.' });
@@ -40,7 +33,7 @@ export const tripExperience = async (req, res) => {
     
     // For development, allow even single places to help debug
     if (places.length < 2) {
-      console.log('Warning: Only found 1 place, but proceeding to help with debugging');
+      // Continue with single place but log for monitoring
     }
     
     // --- Step 2: Build Graph & Find Optimal Journey ---
@@ -51,7 +44,9 @@ export const tripExperience = async (req, res) => {
       return res.status(404).json({ message: 'Could not create a suitable journey with the given constraints.' });
     }    // --- Step 3: Enhance Journey with Rich Place Details ---
     // Fetch detailed information for each place in the journey
-    const enhancedJourney = await Promise.all(journey.map(async (item) => {
+    const placesToEnhance = journey.filter(item => !item.isTravelLeg && item.placeId);
+    
+    const enhancedJourney = await Promise.all(journey.map(async (item, index) => {
       if (!item.isTravelLeg && item.placeId) {
         try {
           const placeDetails = await getPlaceDetails(item.placeId);
@@ -65,18 +60,17 @@ export const tripExperience = async (req, res) => {
               website: placeDetails.website || null,
               phone: placeDetails.phone || null,
               opening_hours: placeDetails.opening_hours || null
-            };
+            };          } else {
+            // No place details available, continue with basic info
           }
         } catch (error) {
-          console.warn(`Could not fetch details for place ${item.name}:`, error.message);
+          // Continue if place details fail - don't break the whole journey
         }
       }
       return item;
     }));
 
     // --- Step 4: Return the Enhanced Result ---
-    const actualPlaces = enhancedJourney.filter(item => !item.isTravelLeg);
-    console.log(`✅ Generated ${journeyMode} journey with ${actualPlaces.length} stops and enhanced details`);
     res.status(200).json(enhancedJourney);
 
   } catch (error) {

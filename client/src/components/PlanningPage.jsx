@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { useAppContext } from '../context/AppContext';
+import { usePlanningPageState } from '../utils/usePlanningPageState';
 import { tripJourney } from '../services/apiService';
 import MapPointSelectorModal from '../components/MapPointSelectorModal';
 import PlacesSearchInput from '../components/PlacesSearchInput';
@@ -17,28 +20,81 @@ const calculateDistance = (point1, point2) => {
   return R * c;
 };
 
-const PlanningPage = ({ 
-  mode, 
-  onBack, 
-  onJourneyGenerated, 
-  setLoading, 
-  setError, 
-  loading, 
-  error, 
-  setCenter 
-}) => {
-  const [location, setLocation] = useState('Bangalore, India');
-  const [preferences, setPreferences] = useState({
-    cafe: true, 
-    park: true, 
-    museum: false, 
-    art_gallery: false, 
-    tourist_attraction: true
-  });  const [duration, setDuration] = useState(360); // Increased default to 6 hours
-  const [budget, setBudget] = useState(200); // Increased default budget
-  const [startPoint, setStartPoint] = useState(null);  const [endPoint, setEndPoint] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);  const [activePointSelector, setActivePointSelector] = useState(null); // 'start' or 'end'
-  const [currentLocation, setCurrentLocation] = useState(null);
+const PlanningPage = () => {
+  const { mode } = useParams();
+  const { 
+    navigateToHome, 
+    navigateBack,
+    navigateToResult, 
+    setLoading, 
+    setError, 
+    loading, 
+    error, 
+    setCenter 
+  } = useAppContext();
+  
+  // Use persistent state hook for all form data
+  const [planningState, setPlanningState] = usePlanningPageState({
+    location: 'Bangalore, India',
+    preferences: {
+      cafe: true, 
+      park: true, 
+      museum: false, 
+      art_gallery: false, 
+      tourist_attraction: true
+    },
+    duration: 360, // 6 hours
+    budget: 200,
+    startPoint: null,
+    endPoint: null,
+    currentLocation: null
+  });
+  // Extract state values for easier use
+  const {
+    location,
+    preferences,
+    duration,
+    budget,
+    startPoint,
+    endPoint,
+    currentLocation
+  } = planningState;
+
+  // Helper functions to update specific parts of the persistent state
+  const setLocation = (newLocation) => {
+    setPlanningState(prev => ({ ...prev, location: newLocation }));
+  };
+
+  const setPreferences = (newPreferences) => {
+    setPlanningState(prev => ({ 
+      ...prev, 
+      preferences: typeof newPreferences === 'function' ? newPreferences(prev.preferences) : newPreferences 
+    }));
+  };
+
+  const setDuration = (newDuration) => {
+    setPlanningState(prev => ({ ...prev, duration: newDuration }));
+  };
+
+  const setBudget = (newBudget) => {
+    setPlanningState(prev => ({ ...prev, budget: newBudget }));
+  };
+
+  const setStartPoint = (newStartPoint) => {
+    setPlanningState(prev => ({ ...prev, startPoint: newStartPoint }));
+  };
+
+  const setEndPoint = (newEndPoint) => {
+    setPlanningState(prev => ({ ...prev, endPoint: newEndPoint }));
+  };
+
+  const setCurrentLocation = (newCurrentLocation) => {
+    setPlanningState(prev => ({ ...prev, currentLocation: newCurrentLocation }));
+  };
+
+  // Non-persistent UI state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activePointSelector, setActivePointSelector] = useState(null); // 'start' or 'end'
   const [loadingLocation, setLoadingLocation] = useState(false);
   const preferenceOptions = [
     { key: 'cafe', label: 'Cafés & Restaurants', icon: '☕' },
@@ -116,7 +172,7 @@ const PlanningPage = ({
         if (firstStop) {
           setCenter(firstStop.location);
         }
-        onJourneyGenerated(data);
+        navigateToResult(data);
       } else {
         setError('No suitable journey found. Please try adjusting your criteria.');
       }
@@ -256,15 +312,14 @@ const PlanningPage = ({
   return (
     <div className="planning-container">
       {/* Header */}
-      <div className="planning-header">
-        <button
-          onClick={onBack}
+      <div className="planning-header">        <button
+          onClick={navigateBack}
           className="planning-back-button"
         >
           <svg className="planning-back-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          <span>Back to Home</span>
+          <span>Back</span>
         </button>
         
         <div className="planning-title-section">

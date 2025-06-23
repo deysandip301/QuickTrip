@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import './PlaceCard.css';
 
-const PlaceCard = ({ place, isExpanded = false, onToggleExpand }) => {
+const PlaceCard = ({ place, isExpanded = false, onToggleExpand, showPhotos = true }) => {
   const [imageError, setImageError] = useState({});
+  const [mainImageError, setMainImageError] = useState(false);
 
   const handleImageError = (photoIndex) => {
     setImageError(prev => ({ ...prev, [photoIndex]: true }));
@@ -47,11 +48,11 @@ const PlaceCard = ({ place, isExpanded = false, onToggleExpand }) => {
     };
     return levels[priceLevel] || 'Price not available';
   };
-
   const formatOpeningHours = (openingHours) => {
     if (!openingHours || !openingHours.open_now) return null;
     return openingHours.open_now ? 'Open now' : 'Closed';
   };
+
 
   return (
     <div className={`place-card ${isExpanded ? 'place-card--expanded' : ''}`}>
@@ -92,8 +93,56 @@ const PlaceCard = ({ place, isExpanded = false, onToggleExpand }) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
-        )}
-      </div>
+        )}      </div>      {/* Featured Photo Section - Only show if photos are available */}
+      {showPhotos && place.photos && place.photos.length > 0 && (
+        <div className="place-card__featured-photo">
+          {!mainImageError ? (
+            <div 
+              className="place-card__featured-photo-container"
+              onClick={onToggleExpand ? () => onToggleExpand(place.placeId) : undefined}
+              role={onToggleExpand ? "button" : undefined}
+              tabIndex={onToggleExpand ? 0 : undefined}
+              aria-label={onToggleExpand ? `View more photos of ${place.name}` : undefined}
+              style={{ cursor: onToggleExpand ? 'pointer' : 'default' }}
+            >              <img
+                src={place.photos[0].url}
+                alt={`${place.name} - Main photo`}
+                className="place-card__featured-photo-img"
+                onError={() => {
+                  setMainImageError(true);
+                }}
+                loading="lazy"
+              />
+              <div className="place-card__featured-photo-overlay">
+                <div className="place-card__photo-badge">
+                  <span className="place-card__photo-badge-icon">📸</span>
+                  <span>{place.photos.length} photo{place.photos.length > 1 ? 's' : ''}</span>
+                </div>
+                <div className="place-card__featured-photo-actions">
+                  {place.photos[0].width > 800 && (
+                    <div className="place-card__photo-quality">
+                      HD
+                    </div>
+                  )}
+                  {onToggleExpand && place.photos.length > 1 && (
+                    <div className="place-card__view-more-photos">
+                      <span>👆 Tap to view all {place.photos.length} photos</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (            <div className="place-card__featured-photo-placeholder">
+              <span className="place-card__featured-photo-placeholder-icon">
+                {getPlaceIcon(place.types || [])}
+              </span>
+              <span className="place-card__featured-photo-placeholder-text">
+                Photo unavailable
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Quick Info */}
       <div className="place-card__quick-info">
@@ -133,8 +182,7 @@ const PlaceCard = ({ place, isExpanded = false, onToggleExpand }) => {
       {/* Expanded Content */}
       {isExpanded && (
         <div className="place-card__expanded-content">          {/* Photos */}
-          {place.photos && place.photos.length > 0 && (
-            <div className="place-card__photos">
+          {place.photos && place.photos.length > 0 && (            <div className="place-card__photos">
               <div className="place-card__section-header">
                 <h4 className="place-card__section-title">Photos</h4>
                 <span className="place-card__photo-count">
@@ -142,11 +190,10 @@ const PlaceCard = ({ place, isExpanded = false, onToggleExpand }) => {
                 </span>
               </div>
               <div className="place-card__photo-grid">
-                {place.photos.slice(0, 3).map((photo, index) => (
+                {place.photos.slice(0, 6).map((photo, index) => (
                   <div key={index} className="place-card__photo-wrapper">
                     {!imageError[index] ? (
-                      <div className="place-card__photo-container">
-                        <img
+                      <div className="place-card__photo-container">                        <img
                           src={photo.url}
                           alt={`${place.name} - Photo ${index + 1}`}
                           className="place-card__photo"
@@ -160,8 +207,7 @@ const PlaceCard = ({ place, isExpanded = false, onToggleExpand }) => {
                               {photo.width > 800 ? 'HD' : photo.width > 400 ? 'HQ' : 'SD'}
                             </span>
                           </div>
-                        )}
-                        {/* Main photo indicator */}
+                        )}                        {/* Main photo indicator */}
                         {index === 0 && (
                           <div className="place-card__main-photo-badge">
                             Featured
@@ -176,14 +222,17 @@ const PlaceCard = ({ place, isExpanded = false, onToggleExpand }) => {
                     )}
                   </div>
                 ))}
-              </div>
-              {place.photos.length > 3 && (
+              </div>              {place.photos.length > 6 && (
                 <div className="place-card__photo-more">
                   <span className="place-card__photo-more-text">
-                    +{place.photos.length - 3} more photo{place.photos.length - 3 > 1 ? 's' : ''}
+                    +{place.photos.length - 6} more photo{place.photos.length - 6 > 1 ? 's' : ''}
                   </span>
                 </div>
               )}
+              {/* Photo attribution notice */}
+              <div className="place-card__photo-attribution-notice">
+                <span>📷 Photos from various sources</span>
+              </div>
             </div>
           )}
 
