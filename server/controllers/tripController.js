@@ -2,7 +2,7 @@
 // Handles the logic for the /trip endpoint. It orchestrates calls to various services.
 
 import { getPlaces } from '../services/googleMapsService.js';
-import { buildGraphAndFindJourney } from '../services/graphSercice.js';
+import { buildGraphAndFindJourney } from '../services/graphService.js';
 
 export const tripExperience = async (req, res) => {
     try {
