@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { handleSignOut } from '../services/firebase';
+import { handleSignOut } from '../../services/firebase';
 
 const Header = ({ user, onNavigateHome, onNavigateSaved, onNavigateAuth }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

@@ -1,12 +1,14 @@
 import React from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import Layout from '../components/Layout';
-import HomePage from '../components/HomePage';
-import PlanningPage from '../components/PlanningPage';
-import JourneyResultPage from '../components/JourneyResultPage';
-import SavedJourneys from '../components/SavedJourneys';
-import AuthPage from '../components/AuthPage';
-import ErrorPage from '../components/ErrorPage';
+import { Layout } from '../components/layout';
+import { 
+  HomePage, 
+  PlanningPage, 
+  JourneyResultPage, 
+  SavedJourneys, 
+  ErrorPage 
+} from '../pages';
+import { AuthPage } from '../features/auth';
 
 // Create the router configuration
 export const router = createBrowserRouter([

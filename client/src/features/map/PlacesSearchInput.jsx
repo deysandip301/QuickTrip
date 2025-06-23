@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { searchPlaces, getPlaceDetails, debounce } from '../utils/placesService';
+import { searchPlaces, getPlaceDetails, debounce } from '../../utils/placesService';
 
 const PlacesSearchInput = ({ 
   placeholder = "Search for a place...", 

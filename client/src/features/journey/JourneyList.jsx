@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { generateMapsFallbackLinks } from '../services/apiService';
-import { formatTravelTime, parseDuration, formatDistance, parseDistance } from '../utils/timeUtils';
-import PlaceCard from './PlaceCard';
-import './JourneyList.css';
-import './JourneyResultPage.css';
+import { generateMapsFallbackLinks } from '../../services/apiService';
+import { formatTravelTime, parseDuration, formatDistance, parseDistance } from '../../utils/timeUtils';
+import { PlaceCard } from './index';
 
 const JourneyList = ({ journey, loading, error }) => {
   const [expandedPlaces, setExpandedPlaces] = useState(new Set());

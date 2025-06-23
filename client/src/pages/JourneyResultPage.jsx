@@ -3,11 +3,10 @@ import { useLocation, useSearchParams } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { saveJourney } from '../services/firebase';
 import { loadJourneyFromUrl } from '../utils/urlState';
-import JourneyList from './JourneyList';
-import MapDisplay from './MapDisplay';
+import { JourneyList } from '../features/journey';
+import { MapDisplay } from '../features/map';
 import { formatTime, calculateTotalTravelTime, formatDistance, calculateTotalDistance, generateGoogleMapsRoute } from '../utils/timeUtils';
 import { enrichJourneyPlaces } from '../utils/placeUtils';
-import './JourneyResultPage.css';
 
 const JourneyResultPage = () => {
   const location = useLocation();

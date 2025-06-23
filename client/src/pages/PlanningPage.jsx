@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
-import { usePlanningPageState } from '../utils/usePlanningPageState';
+import { usePlanningPageState } from '../hooks';
 import { tripJourney } from '../services/apiService';
-import MapPointSelectorModal from '../components/MapPointSelectorModal';
-import PlacesSearchInput from '../components/PlacesSearchInput';
+import { MapPointSelectorModal, PlacesSearchInput } from '../features/map';
 import { getCurrentLocation as getDeviceLocation } from '../utils/geolocation';
+import { PREFERENCE_OPTIONS, DEFAULT_PREFERENCES, API_CONFIG, DEFAULT_LOCATION } from '../constants';
 // CSS imported in App.jsx
 
 // Utility function to calculate distance between two points in kilometers
@@ -91,21 +91,10 @@ const PlanningPage = () => {
   const setCurrentLocation = (newCurrentLocation) => {
     setPlanningState(prev => ({ ...prev, currentLocation: newCurrentLocation }));
   };
-
   // Non-persistent UI state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activePointSelector, setActivePointSelector] = useState(null); // 'start' or 'end'
   const [loadingLocation, setLoadingLocation] = useState(false);
-  const preferenceOptions = [
-    { key: 'cafe', label: 'Cafés & Restaurants', icon: '☕' },
-    { key: 'park', label: 'Parks & Nature', icon: '🌳' },
-    { key: 'museum', label: 'Museums & History', icon: '🏛️' },
-    { key: 'art_gallery', label: 'Art & Culture', icon: '🎨' },
-    { key: 'tourist_attraction', label: 'Attractions & Sights', icon: '🌟' },
-    { key: 'shopping_mall', label: 'Shopping Centers', icon: '🛍️' },
-    { key: 'amusement_park', label: 'Entertainment', icon: '🎢' },
-    { key: 'zoo', label: 'Wildlife & Zoos', icon: '🦁' },
-  ];
 
   const handlePreferenceChange = (key) => {
     setPreferences(prev => ({ ...prev, [key]: !prev[key] }));
@@ -523,7 +512,7 @@ const PlanningPage = () => {
             </h3>
             
             <div className="planning-preferences-grid">
-              {preferenceOptions.map(option => (
+              {PREFERENCE_OPTIONS.map(option => (
                 <label 
                   key={option.key} 
                   className="planning-preference-item"

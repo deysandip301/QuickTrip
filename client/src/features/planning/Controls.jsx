@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { tripJourney } from '../services/apiService';
-import MapPointSelectorModal from './Map/MapPointSelectorModal';
-// CSS imported in App.jsx
+import { tripJourney } from '../../services/apiService';
+import { MapPointSelectorModal } from '../map';
+import { PREFERENCE_OPTIONS, DEFAULT_PREFERENCES, API_CONFIG } from '../../constants';
 
 const Controls = ({ 
   setJourney, 
@@ -14,23 +14,12 @@ const Controls = ({
   endPoint
 }) => {
   const [location, setLocation] = useState('Bangalore, India');
-  const [preferences, setPreferences] = useState({
-    cafe: true, park: true, museum: false, art_gallery: false, tourist_attraction: true
-  });
-  const [duration, setDuration] = useState(360); // Increased default to 6 hours
-  const [budget, setBudget] = useState(200); // Increased default budget
+  const [preferences, setPreferences] = useState(DEFAULT_PREFERENCES);
+  const [duration, setDuration] = useState(API_CONFIG.DEFAULT_DURATION);
+  const [budget, setBudget] = useState(API_CONFIG.DEFAULT_BUDGET);
   const [gettingLocation, setGettingLocation] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [journeyMode, setJourneyMode] = useState('currentLocation');
-
-  const preferenceOptions = [
-    { key: 'cafe', label: 'Cafes & Hangouts', icon: '☕', color: 'bg-yellow-100 text-yellow-800' },
-    { key: 'park', label: 'Parks & Nature', icon: '🌳', color: 'bg-green-100 text-green-800' },
-    { key: 'museum', label: 'Museums & History', icon: '🏛️', color: 'bg-indigo-100 text-indigo-800' },
-    { key: 'art_gallery', label: 'Art & Culture', icon: '🎨', color: 'bg-pink-100 text-pink-800' },
-    { key: 'tourist_attraction', label: 'Attractions & Sights', icon: '🌟', color: 'bg-blue-100 text-blue-800' },
-  ];
-
   const handlePreferenceChange = (e) => {
     setPreferences({ ...preferences, [e.target.name]: e.target.checked });
   };
@@ -236,7 +225,7 @@ const Controls = ({
                 ✨ What interests you?
               </label>
               <div className="space-y-2">
-                {preferenceOptions.map(option => (
+                {PREFERENCE_OPTIONS.map(option => (
                   <label key={option.key} className="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors duration-200 journey-card">
                     <input
                       type="checkbox"

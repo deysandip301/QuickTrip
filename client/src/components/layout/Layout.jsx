@@ -1,27 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import Header from './Header';
-import Footer from './Footer';
+import { Header, Footer } from './index';
 import { APIProvider } from '@vis.gl/react-google-maps';
-import { onAuthChange } from '../services/firebase';
-import { getSmartLocation } from '../utils/geolocation';
-import { AppContext } from '../context/AppContext';
-import { savePageState, loadPageState, getPreviousPageState, STORAGE_KEYS } from '../utils/stateUtils';
+import { onAuthChange } from '../../services/firebase';
+import { getSmartLocation } from '../../utils/geolocation';
+import { AppContext } from '../../context/AppContext';
+import { savePageState, getPreviousPageState, STORAGE_KEYS } from '../../utils/stateUtils';
 
-// Import all component CSS files
-import './AuthPage.css';
-import './HomePage.css';
-import './PlanningPage.css';
-import './JourneyResultPage.css';
-import './JourneyList.css';
-import './SavedJourneys.css';
-import './MapDisplay.css';
-import './MapPointSelector.css';
-import './MapPointSelectorModal.css';
-import './Controls.css';
+// Import CSS files from their new locations
+import '../../pages/HomePage.css';
+import '../../pages/PlanningPage.css';
+import '../../pages/JourneyResultPage.css';
+import '../../pages/SavedJourneys.css';
+import '../../pages/ErrorPage.css';
+import '../../features/auth/AuthPage.css';
+import '../../features/journey/JourneyList.css';
+import '../../features/map/MapDisplay.css';
+import '../../features/map/MapPointSelector.css';
+import '../../features/map/MapPointSelectorModal.css';
+import '../../features/planning/Controls.css';
+import '../../components/ui/LocationPrompt.css';
 import './Header.css';
 import './Footer.css';
-import '../App.css';
+import '../../App.css';
+import './Footer.css';
+import '../../App.css';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {

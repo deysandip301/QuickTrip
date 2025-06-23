@@ -58,7 +58,8 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* Custom Route Mode */}          <div 
+          {/* Custom Route Mode */}
+          <div 
             onClick={() => navigateToPlanning('customRoute')}
             className="mode-card"
           >
@@ -88,14 +89,16 @@ const HomePage = () => {
               <div className="mode-cta">
                 <span className="cta-text">Plan Route</span>
                 <span className="cta-arrow">→</span>
-              </div>            </div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Features Section */}
         <div className="features-section">
           <h2 className="features-title">Why Choose QuickTrip?</h2>
-          <div className="features-grid">            <div className="feature-card">
+          <div className="features-grid">
+            <div className="feature-card">
               <div className="feature-icon-large">⚡</div>
               <h4 className="feature-title">Smart Planning</h4>
               <p className="feature-desc">Intelligent recommendations based on your preferences</p>
