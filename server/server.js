@@ -30,6 +30,7 @@ app.use('/api', limiter);
 // Enable Cross-Origin Resource Sharing (CORS) to allow requests from the frontend
 const allowedOrigins = [
   process.env.CLIENT_URL,
+  'https://quicktripone.vercel.app', // Production frontend
   'http://localhost:5173', // Local development
   'http://localhost:3000'  // Alternative local port
 ].filter(Boolean);
