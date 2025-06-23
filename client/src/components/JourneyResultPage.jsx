@@ -2,36 +2,37 @@ import React from 'react';
 import JourneyList from './JourneyList';
 import MapDisplay from './MapDisplay';
 import { formatTime, calculateTotalTravelTime, formatDistance, calculateTotalDistance, generateGoogleMapsRoute } from '../utils/timeUtils';
+import { enrichJourneyPlaces } from '../utils/placeUtils';
 import './JourneyResultPage.css';
 
 const JourneyResultPage = ({ journey, onBack, onSave, center, user, savedJourneySummary }) => {
+  // Enrich journey with enhanced place data for better display
+  const enrichedJourney = enrichJourneyPlaces(journey);
+
   const handleSaveJourney = async () => {
-    try {
-      // Calculate totals for the summary
-      const totalTravelTimeMinutes = calculateTotalTravelTime(journey);
-      const totalDistanceKm = calculateTotalDistance(journey);
-      
-      const journeyData = {
-        journey,
-        timestamp: new Date().toISOString(),
-        center,
-        // Add calculated summary data
-        summary: {
-          totalStops: journey.filter(item => !item.isTravelLeg).length,
-          totalTravelTimeMinutes,
-          totalDistanceKm,
-          formattedTravelTime: formatTime(totalTravelTimeMinutes),
-          formattedDistance: formatDistance(totalDistanceKm)
-        }
-      };
-      await onSave(journeyData);
-      alert('Journey saved successfully!');
-    } catch (error) {
-      console.error('Error saving journey:', error);
-      alert(`Failed to save journey: ${error.message}`);
+    // Calculate totals for the summary
+    const totalTravelTimeMinutes = calculateTotalTravelTime(enrichedJourney);
+    const totalDistanceKm = calculateTotalDistance(enrichedJourney);
+    
+    const journeyData = {
+      journey: enrichedJourney, // Save the enriched journey data
+      timestamp: new Date().toISOString(),
+      center,
+      // Add calculated summary data
+      summary: {
+        totalStops: enrichedJourney.filter(item => !item.isTravelLeg).length,
+        totalTravelTimeMinutes,
+        totalDistanceKm,
+        formattedTravelTime: formatTime(totalTravelTimeMinutes),
+        formattedDistance: formatDistance(totalDistanceKm)
+      }
+    };
+    
+    // Call the onSave callback (which handles auth check in App.jsx)
+    if (onSave) {
+      onSave(journeyData);
     }
   };
-
   // Ensure journey is an array and add defensive programming
   if (!Array.isArray(journey)) {
     return (
@@ -42,8 +43,9 @@ const JourneyResultPage = ({ journey, onBack, onSave, center, user, savedJourney
       </div>
     );
   }
+  
   // Calculate journey statistics
-  const totalStops = journey.filter(item => !item.isTravelLeg).length;
+  const totalStops = enrichedJourney.filter(item => !item.isTravelLeg).length;
   
   // Use saved summary data if available, otherwise calculate from journey
   let totalTravelTimeMinutes, formattedTravelTime, totalDistanceKm, formattedDistance;
@@ -56,16 +58,16 @@ const JourneyResultPage = ({ journey, onBack, onSave, center, user, savedJourney
     formattedDistance = savedJourneySummary.formattedDistance || formatDistance(totalDistanceKm);
   } else {
     // Calculate from journey data (for new journeys)
-    totalTravelTimeMinutes = calculateTotalTravelTime(journey);
+    totalTravelTimeMinutes = calculateTotalTravelTime(enrichedJourney);
     formattedTravelTime = formatTime(totalTravelTimeMinutes);
-    totalDistanceKm = calculateTotalDistance(journey);
+    totalDistanceKm = calculateTotalDistance(enrichedJourney);
     formattedDistance = formatDistance(totalDistanceKm);
   }
   
   // Generate Google Maps route link
-  const googleMapsUrl = generateGoogleMapsRoute(journey);
+  const googleMapsUrl = generateGoogleMapsRoute(enrichedJourney);
 
-  const estimatedCost = journey
+  const estimatedCost = enrichedJourney
     .filter(item => !item.isTravelLeg)
     .reduce((total, stop) => total + (stop.estimatedCost || 20), 0);
   return (
@@ -92,18 +94,16 @@ const JourneyResultPage = ({ journey, onBack, onSave, center, user, savedJourney
               <p className="journey-result-subtitle">Ready to explore? Here's your personalized itinerary!</p>
             </div>
           </div>
-          
-          {user && (
-            <button
-              onClick={handleSaveJourney}
-              className="journey-result-save-btn"
-            >
-              <svg className="journey-result-save-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              <span>Save Journey</span>
-            </button>
-          )}
+            {/* Save Journey Button - Always visible */}
+          <button
+            onClick={handleSaveJourney}
+            className="journey-result-save-btn"
+          >
+            <svg className="journey-result-save-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <span>{user ? 'Save Journey' : 'Login to Save'}</span>
+          </button>
         </div>
       </div>      {/* Journey Statistics */}
       <div className="journey-result-stats">
@@ -150,7 +150,7 @@ const JourneyResultPage = ({ journey, onBack, onSave, center, user, savedJourney
             <p className="journey-result-section-subtitle">Follow this route for the perfect day out!</p>
           </div>
           <div className="journey-result-section-content">
-            <JourneyList journey={journey} />
+            <JourneyList journey={enrichedJourney} />
           </div>
         </div>        {/* Map Display - Enhanced with Journey Stats */}
         <div className="journey-result-section map-section">
@@ -213,7 +213,7 @@ const JourneyResultPage = ({ journey, onBack, onSave, center, user, savedJourney
             
             {/* Map Display */}
             <div className="journey-result-map">
-              <MapDisplay journey={journey} center={center} />
+              <MapDisplay journey={enrichedJourney} center={center} />
             </div>
           </div>
         </div>

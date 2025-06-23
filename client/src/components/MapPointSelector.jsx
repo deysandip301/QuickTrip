@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Map, AdvancedMarker, useMap } from '@vis.gl/react-google-maps';
+import PlacesSearchInput from './PlacesSearchInput';
 import './MapPointSelector.css';
 
 const MapPointSelector = ({ onStartPointChange, onEndPointChange, setCenter: setAppCenter, activePointSelector }) => {
@@ -112,7 +113,38 @@ const MapPointSelector = ({ onStartPointChange, onEndPointChange, setCenter: set
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
             <span>Reset</span>
-          </button>
+          </button>        </div>        {/* Places Search */}
+        <div className="map-point-selector-search">
+          <div className="map-point-selector-search-header">
+            <svg className="map-point-selector-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span className="map-point-selector-search-title">Search Location</span>
+          </div>
+          <PlacesSearchInput
+            placeholder={`Search for ${getPointTypeText()} location...`}
+            onPlaceSelect={(place) => {
+              if (place.location) {
+                const point = place.location;
+                setSelectedPoint(point);
+                
+                // Call the appropriate callback based on which point selector is active
+                if (activePointSelector === 'start') {
+                  onStartPointChange(point);
+                } else if (activePointSelector === 'end') {
+                  onEndPointChange(point);
+                }
+
+                // Center map on selected place
+                if (map) {
+                  map.setCenter(point);
+                  map.setZoom(15);
+                }
+                setAppCenter(point);
+              }
+            }}
+            className="map-point-selector-places-input"
+          />
         </div>
 
         {/* Status Display */}

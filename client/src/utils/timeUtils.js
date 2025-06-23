@@ -93,14 +93,14 @@ export const calculateTotalTravelTime = (journey) => {
 /**
  * Parses distance from various formats and returns kilometers
  * @param {string|number|object} distance - Distance in various formats
- * @returns {number} Distance in kilometers
+ * @returns {number} Distance in kilometers (rounded to 2 decimal places)
  */
 export const parseDistance = (distance) => {
   if (!distance) return 0;
   
   // If it's already a number (kilometers)
   if (typeof distance === 'number') {
-    return Math.round(distance * 100) / 100; // Round to 2 decimal places
+    return roundDistance(distance);
   }
   
   // If it's a string like "5 km", "1,200 m", "0.5 miles"
@@ -111,31 +111,31 @@ export const parseDistance = (distance) => {
     // Try to match kilometers
     const kmMatch = normalizedDistance.match(/(\d+\.?\d*)\s*km/);
     if (kmMatch) {
-      return Math.round(parseFloat(kmMatch[1]) * 100) / 100;
+      return roundDistance(parseFloat(kmMatch[1]));
     }
     
     // Try to match meters
     const mMatch = normalizedDistance.match(/(\d+\.?\d*)\s*m(?:eter)?s?(?!\w)/);
     if (mMatch) {
-      return Math.round(parseFloat(mMatch[1]) / 10) / 100; // Convert to km and round
+      return roundDistance(parseFloat(mMatch[1]) / 1000); // Convert to km
     }
     
     // Try to match miles
     const milesMatch = normalizedDistance.match(/(\d+\.?\d*)\s*mi(?:le)?s?/);
     if (milesMatch) {
-      return Math.round(parseFloat(milesMatch[1]) * 160.934) / 100; // Convert to km
+      return roundDistance(parseFloat(milesMatch[1]) * 1.60934); // Convert to km
     }
     
     // If no specific pattern found, try to extract any number and assume km
     const numberMatch = normalizedDistance.match(/(\d+\.?\d*)/);
     if (numberMatch) {
-      return Math.round(parseFloat(numberMatch[1]) * 100) / 100;
+      return roundDistance(parseFloat(numberMatch[1]));
     }
   }
   
   // If it's an object with value property (Google API format)
   if (typeof distance === 'object' && distance.value) {
-    return Math.round((distance.value / 1000) * 100) / 100; // Convert meters to km
+    return roundDistance(distance.value / 1000); // Convert meters to km
   }
   
   return 0;
@@ -149,22 +149,26 @@ export const parseDistance = (distance) => {
 export const formatDistance = (totalKm) => {
   if (!totalKm || totalKm <= 0) return '0 km';
   
-  if (totalKm < 1) {
-    return `${Math.round(totalKm * 1000)} m`;
+  // Round to 2 decimal places
+  const roundedKm = Math.round(totalKm * 100) / 100;
+  
+  if (roundedKm < 1) {
+    return `${Math.round(roundedKm * 1000)} m`;
   } else {
-    return `${totalKm} km`;
+    return `${roundedKm.toFixed(2).replace(/\.?0+$/, '')} km`;
   }
 };
 
 /**
  * Calculates total distance from journey legs
  * @param {Array} journey - Journey array with travel legs
- * @returns {number} Total distance in kilometers
+ * @returns {number} Total distance in kilometers (rounded to 2 decimal places)
  */
 export const calculateTotalDistance = (journey) => {
-  return journey
+  const total = journey
     .filter(item => item.isTravelLeg)
     .reduce((total, leg) => total + parseDistance(leg.distance), 0);
+  return roundDistance(total);
 };
 
 /**
@@ -210,4 +214,14 @@ export const generateGoogleMapsRoute = (journey) => {
   }
   
   return url;
+};
+
+/**
+ * Rounds a distance value to 2 decimal places consistently
+ * @param {number} distanceKm - Distance in kilometers
+ * @returns {number} Rounded distance in kilometers
+ */
+export const roundDistance = (distanceKm) => {
+  if (!distanceKm || typeof distanceKm !== 'number') return 0;
+  return Math.round(distanceKm * 100) / 100;
 };

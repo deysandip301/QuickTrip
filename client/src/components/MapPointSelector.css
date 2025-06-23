@@ -442,6 +442,122 @@
   height: 0.75rem;
 }
 
+/* Places Search */
+.map-point-selector-search {
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 10;
+}
+
+.map-point-selector-search-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.map-point-selector-search-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.map-point-selector-search-title {
+  color: #475569;
+  font-weight: 600;
+}
+
+.map-point-selector-places-input .places-search-input {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+}
+
+.map-point-selector-places-input .places-search-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15), 0 8px 25px rgba(0, 0, 0, 0.15);
+  background: white;
+  outline: none;
+}
+
+.map-point-selector-places-input .places-search-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.map-point-selector-places-input .places-search-suggestions {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+  margin-top: 4px;
+  max-height: 300px;
+  z-index: 1000;
+}
+
+.map-point-selector-places-input .places-search-suggestion {
+  border-bottom: 1px solid #f1f5f9;
+  padding: 14px 16px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.map-point-selector-places-input .places-search-suggestion:last-child {
+  border-bottom: none;
+}
+
+.map-point-selector-places-input .places-search-suggestion:hover,
+.map-point-selector-places-input .places-search-suggestion.selected {
+  background-color: #f8fafc;
+}
+
+.map-point-selector-places-input .places-search-suggestion.selected {
+  background-color: #eff6ff;
+  border-left: 3px solid #3b82f6;
+}
+
+.map-point-selector-places-input .places-search-suggestion-primary {
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+
+.map-point-selector-places-input .places-search-suggestion-secondary {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.map-point-selector-places-input .places-search-suggestion-icon {
+  font-size: 18px;
+  opacity: 0.8;
+  margin-right: 12px;
+}
+
+.map-point-selector-places-input .places-search-no-results {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  margin-top: 4px;
+  padding: 16px;
+  text-align: center;
+}
+
+.map-point-selector-places-input .places-search-no-results-text {
+  color: #64748b;
+  font-style: italic;
+}
+
 /* Animations */
 @keyframes pulse {
   0%, 100% {
@@ -505,14 +621,9 @@
     height: 1.75rem;
     font-size: 0.75rem;
   }
-  
-  .map-point-selector-instructions-hints {
+    .map-point-selector-instructions-hints {
     display: none; /* Hide hints on very small screens */
   }
-}
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
 }
 
 .map-selector-mode-btn {

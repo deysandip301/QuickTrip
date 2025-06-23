@@ -30,6 +30,14 @@
   background-clip: text;
 }
 
+.auth-subtitle {
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -138,6 +146,33 @@
 .auth-guest:hover {
   background: rgba(107, 114, 128, 0.1);
   color: #374151;
+}
+
+/* Auth back button */
+.auth-back-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6b7280;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.auth-back-button:hover {
+  color: #374151;
+  background: rgba(107, 114, 128, 0.1);
+}
+
+.auth-back-icon {
+  width: 1rem;
+  height: 1rem;
 }
 
 @media (max-width: 768px) {

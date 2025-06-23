@@ -68,20 +68,17 @@ class ErrorBoundary extends React.Component {
 function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState('home'); // 'home', 'planning', 'result', 'saved'
+  const [currentPage, setCurrentPage] = useState('home'); // 'home', 'planning', 'result', 'saved', 'auth'
   const [journeyMode, setJourneyMode] = useState(null); // 'currentLocation' or 'customRoute'
-  const [journey, setJourney] = useState([]);
-  const [center, setCenter] = useState({ lat: 12.9716, lng: 77.5946 }); // Default to Bangalore
-  const [locationLoading, setLocationLoading] = useState(true);
+  const [journey, setJourney] = useState([]);  const [center, setCenter] = useState({ lat: 12.9716, lng: 77.5946 }); // Default to Bangalore
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [savedJourneySummary, setSavedJourneySummary] = useState(null); // For displaying saved journey stats
+  const [pendingJourneyToSave, setPendingJourneyToSave] = useState(null); // Journey waiting to be saved after auth
 
   // Initialize user location on app start
-  useEffect(() => {
-    const initializeLocation = async () => {
+  useEffect(() => {    const initializeLocation = async () => {
       try {
-        setLocationLoading(true);
         const locationData = await getSmartLocation({
           timeout: 8000, // 8 second timeout
           maximumAge: 600000 // 10 minutes cache
@@ -96,12 +93,9 @@ function App() {
           console.log('✅ Location detected:', locationData.city || 'Current Location');
         } else {
           console.log('📍 Using fallback location:', locationData.city);
-        }
-      } catch (error) {
+        }      } catch (error) {
         console.warn('❌ Location detection failed, using default:', error);
         // Keep default Bangalore coordinates
-      } finally {
-        setLocationLoading(false);
       }
     };
 
@@ -115,13 +109,13 @@ function App() {
     });
 
     return () => unsubscribe();
-  }, []);
-  const navigateToPlanning = (mode) => {
+  }, []);  const navigateToPlanning = (mode) => {
     setJourneyMode(mode);
     setCurrentPage('planning');
     setError('');
     setSavedJourneySummary(null); // Reset saved journey summary
   };
+
   const navigateToHome = () => {
     setCurrentPage('home');
     setJourneyMode(null);
@@ -129,6 +123,7 @@ function App() {
     setError('');
     setSavedJourneySummary(null); // Reset saved journey summary
   };
+
   const navigateToResult = (journeyData) => {
     // Check if this is a saved journey with summary data or a regular journey array
     if (journeyData.isSavedJourney) {
@@ -143,10 +138,42 @@ function App() {
     }
     setCurrentPage('result');
   };
+
   const navigateToSaved = () => {
+    if (!user) {
+      // Redirect to auth if not logged in
+      setCurrentPage('auth');
+      return;
+    }
     setCurrentPage('saved');
   };
-  if (authLoading) {
+
+  const navigateToAuth = (journeyToSave = null) => {
+    if (journeyToSave) {
+      setPendingJourneyToSave(journeyToSave);
+    }
+    setCurrentPage('auth');
+  };
+
+  const handleAuthSuccess = async () => {
+    // If there's a pending journey to save, save it now
+    if (pendingJourneyToSave) {
+      try {
+        await saveJourney(pendingJourneyToSave, user);
+        setPendingJourneyToSave(null);
+        setError('');
+        alert('Journey saved successfully!');
+        setCurrentPage('result'); // Go back to result page
+      } catch (err) {
+        console.error('Save error:', err);
+        setError('Failed to save journey. Please try again.');
+        setCurrentPage('result'); // Go back to result page even if save failed
+      }
+    } else {
+      // No pending journey, just go to home
+      setCurrentPage('home');
+    }
+  };  if (authLoading) {
     return (
       <div className="auth-loading-container">
         <div className="auth-loading-content">
@@ -157,8 +184,9 @@ function App() {
     );
   }
 
-  if (!user) {
-    return <AuthPage />;
+  // Show auth page only when specifically navigating to it
+  if (currentPage === 'auth') {
+    return <AuthPage onAuthSuccess={handleAuthSuccess} onBack={() => setCurrentPage('home')} />;
   }
   return (
     <ErrorBoundary>      <APIProvider 
@@ -167,13 +195,13 @@ function App() {
         version="weekly"
       >
         <div className="app-layout">
-          {/* Header */}
-          <Header 
+          {/* Header */}          <Header 
             user={user}
             currentPage={currentPage}
             setCurrentPage={setCurrentPage}
             onNavigateHome={navigateToHome}
             onNavigateSaved={navigateToSaved}
+            onNavigateAuth={() => navigateToAuth()}
           />
 
           {/* Main Content */}
@@ -193,13 +221,18 @@ function App() {
                 error={error}
                 setCenter={setCenter}
               />
-            )}
-              {currentPage === 'result' && (
+            )}            {currentPage === 'result' && (
               <JourneyResultPage 
                 journey={journey}
                 onBack={navigateToHome}
                 savedJourneySummary={savedJourneySummary}
                 onSave={async (journeyData) => {
+                  if (!user) {
+                    // User not logged in, navigate to auth with pending journey
+                    navigateToAuth(journeyData);
+                    return;
+                  }
+                  
                   try {
                     await saveJourney(journeyData, user);
                     setError('');

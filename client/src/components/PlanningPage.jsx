@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { tripJourney } from '../services/apiService';
 import MapPointSelectorModal from '../components/MapPointSelectorModal';
-import LocationPrompt from '../components/LocationPrompt';
-import { getCurrentLocation as getDeviceLocation, isGeolocationSupported } from '../utils/geolocation';
-import '../components/LocationPrompt.css';
+import PlacesSearchInput from '../components/PlacesSearchInput';
+import { getCurrentLocation as getDeviceLocation } from '../utils/geolocation';
 // CSS imported in App.jsx
 
 // Utility function to calculate distance between two points in kilometers
@@ -38,10 +37,9 @@ const PlanningPage = ({
   });  const [duration, setDuration] = useState(360); // Increased default to 6 hours
   const [budget, setBudget] = useState(200); // Increased default budget
   const [startPoint, setStartPoint] = useState(null);  const [endPoint, setEndPoint] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activePointSelector, setActivePointSelector] = useState(null); // 'start' or 'end'
-  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
-  const [locationDetected, setLocationDetected] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);  const [activePointSelector, setActivePointSelector] = useState(null); // 'start' or 'end'
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const [loadingLocation, setLoadingLocation] = useState(false);
   const preferenceOptions = [
     { key: 'cafe', label: 'Cafés & Restaurants', icon: '☕' },
     { key: 'park', label: 'Parks & Nature', icon: '🌳' },
@@ -133,6 +131,9 @@ const PlanningPage = ({
       setLoading(false);
     }
   };  const getCurrentLocation = async () => {
+    setLoadingLocation(true);
+    setError(null);
+    
     try {
       const locationData = await getDeviceLocation({
         timeout: 10000,
@@ -142,9 +143,16 @@ const PlanningPage = ({
       
       const { lat, lng } = locationData;
       
-      // Update map center
+      // Update map center and current location for places search
       setCenter({ lat, lng });
-      setLocationDetected(true);
+        // Initialize with coordinates first
+      setCurrentLocation({ 
+        lat, 
+        lng, 
+        address: 'Locating...',
+        shortAddress: 'Locating...',
+        accuracy: locationData.accuracy
+      });
       
       // Reverse geocode to get address
       try {
@@ -154,51 +162,96 @@ const PlanningPage = ({
         const data = await response.json();
         
         if (data.results && data.results.length > 0) {
-          setLocation(data.results[0].formatted_address);
+          const result = data.results[0];
+          const fullAddress = result.formatted_address;
+          
+          // Extract detailed address components
+          const addressComponents = result.address_components;
+          const streetNumber = addressComponents.find(comp => comp.types.includes('street_number'))?.long_name || '';
+          const route = addressComponents.find(comp => comp.types.includes('route'))?.long_name || '';
+          const neighborhood = addressComponents.find(comp => comp.types.includes('neighborhood'))?.long_name || '';
+          const locality = addressComponents.find(comp => comp.types.includes('locality'))?.long_name || '';
+          const area = addressComponents.find(comp => comp.types.includes('administrative_area_level_2'))?.long_name || '';
+          const state = addressComponents.find(comp => comp.types.includes('administrative_area_level_1'))?.short_name || '';
+          const country = addressComponents.find(comp => comp.types.includes('country'))?.short_name || '';
+          
+          // Create detailed address
+          let detailedAddress = '';
+          let shortAddress = '';
+          
+          if (streetNumber && route) {
+            detailedAddress = `${streetNumber} ${route}`;
+            if (neighborhood) {
+              detailedAddress += `, ${neighborhood}`;
+            } else if (locality) {
+              detailedAddress += `, ${locality}`;
+            }
+          } else if (neighborhood) {
+            detailedAddress = neighborhood;
+            if (locality) {
+              detailedAddress += `, ${locality}`;
+            }
+          } else if (locality) {
+            detailedAddress = locality;
+          } else if (area) {
+            detailedAddress = area;
+          }
+          
+          // Short address for display
+          if (neighborhood && locality) {
+            shortAddress = `${neighborhood}, ${locality}`;
+          } else if (locality) {
+            shortAddress = locality;
+          } else if (area) {
+            shortAddress = area;
+          } else {
+            shortAddress = detailedAddress;
+          }
+          
+          setCurrentLocation({ 
+            lat, 
+            lng, 
+            address: fullAddress,
+            shortAddress: shortAddress || detailedAddress,
+            detailedAddress: detailedAddress,
+            locality,
+            state,
+            country,
+            accuracy: locationData.accuracy
+          });
+          setLocation(fullAddress);
         } else {
-          setLocation(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+          const coordsText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+          setCurrentLocation({ 
+            lat, 
+            lng, 
+            address: coordsText,
+            shortAddress: coordsText,
+            accuracy: locationData.accuracy
+          });
+          setLocation(coordsText);
         }
       } catch (error) {
         console.error('Reverse geocoding failed:', error);
-        setLocation(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+        const coordsText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        setCurrentLocation({ 
+          lat, 
+          lng, 
+          address: coordsText,
+          shortAddress: coordsText,
+          accuracy: locationData.accuracy
+        });
+        setLocation(coordsText);
       }
     } catch (error) {
       console.error('Error getting location:', error);
-      setError('Could not get your location. Please enter manually or check location permissions.');
+      setError('Could not get your location. Please enable location access and try again.');
+    } finally {
+      setLoadingLocation(false);
     }
   };
-
-  // Check for location support and prompt user when custom route is selected
-  useEffect(() => {
-    if (mode === 'customRoute' && isGeolocationSupported() && !locationDetected) {
-      // Small delay to let the page render before showing prompt
-      const timer = setTimeout(() => {
-        setShowLocationPrompt(true);
-      }, 1000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [mode, locationDetected]);
-
-  // Handle location update from prompt or direct detection
-  const handleLocationUpdate = (locationData) => {
-    setLocationDetected(true);
-    setShowLocationPrompt(false);
-    
-    // Update the map center with detected location
-    setCenter({
-      lat: locationData.lat,
-      lng: locationData.lng
-    });
-    
-    console.log('📍 Location updated for map centering');
-  };
-
-  // Handle location prompt dismissal
-  const handleLocationPromptDismiss = () => {
-    setShowLocationPrompt(false);
-    setLocationDetected(true); // Mark as handled to prevent showing again
-  };
+  // Note: We don't automatically request location on component mount
+  // Users can manually get their location using the "Current Location" button
 
   return (
     <div className="planning-container">
@@ -245,39 +298,92 @@ const PlanningPage = ({
         </div>
       )}      {/* Planning Form */}
       <div className="planning-form-container">
-        <form onSubmit={handleSubmit} className="planning-form">
-          {/* Location Section - Only for Current Location Mode */}
+        <form onSubmit={handleSubmit} className="planning-form">          {/* Location Section - Only for Current Location Mode */}
           {mode === 'currentLocation' && (
             <div className="planning-section">
               <h3 className="planning-section-title">
                 <span className="planning-section-icon">📍</span>
-                <span>Location</span>
-              </h3>
-              
-              <div className="planning-location-row">
-                <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="planning-location-input"
-                  placeholder="Enter your starting city or area..."
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={getCurrentLocation}
-                  className="planning-current-location-btn"
-                >
-                  <svg className="planning-current-location-icon" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Current</span>
-                </button>
+                <span>Your Location</span>
+              </h3>              <div className="planning-current-location-section">
+                {currentLocation ? (
+                  <div className="planning-current-location-display">
+                    <div className="planning-current-location-info">
+                      <div className="planning-current-location-header">
+                        <div className="planning-current-location-icon">
+                          📍
+                        </div>                        <div className="planning-current-location-content">
+                          <h4 className="planning-current-location-label">Location Detected</h4>
+                          <p className="planning-current-location-status">
+                            {currentLocation.accuracy && currentLocation.accuracy < 100 
+                              ? `Accurate to ${Math.round(currentLocation.accuracy)}m` 
+                              : 'Ready to find nearby places'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="planning-current-location-details">
+                        <div className="planning-location-primary">
+                          {currentLocation.shortAddress && currentLocation.shortAddress !== 'Locating...' 
+                            ? currentLocation.shortAddress 
+                            : `${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)}`}
+                        </div>
+                        {currentLocation.detailedAddress && currentLocation.detailedAddress !== currentLocation.shortAddress && (
+                          <div className="planning-location-secondary">
+                            {currentLocation.detailedAddress}
+                          </div>
+                        )}
+                        <div className="planning-current-location-coords">
+                          <svg className="planning-coords-icon" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                          </svg>
+                          <span>
+                            {currentLocation.lat.toFixed(6)}, {currentLocation.lng.toFixed(6)}
+                          </span>
+                          {currentLocation.locality && currentLocation.state && (
+                            <span className="planning-location-region">
+                              • {currentLocation.locality}, {currentLocation.state}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={getCurrentLocation}
+                      className="planning-refresh-location-btn"
+                      title="Refresh current location"
+                    >
+                      <svg className="planning-refresh-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                      </svg>
+                      <span>Refresh</span>
+                    </button>
+                  </div>
+                ) : loadingLocation ? (
+                  <div className="planning-location-loading">
+                    <div className="planning-location-spinner"></div>
+                    <span>Detecting your location...</span>
+                  </div>
+                ) : (
+                  <div className="planning-current-location-prompt">
+                    <p className="planning-current-location-text">
+                      🗺️ We'll use your current location to discover amazing places nearby and create the perfect journey for you.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={getCurrentLocation}
+                      className="planning-get-location-btn"
+                      title="Get my current location"
+                    >
+                      <svg className="planning-location-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                      </svg>
+                      <span>Get Current Location</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-          )}
-
-          {/* Custom Route Section - Only for Custom Route Mode */}
+          )}{/* Custom Route Section - Only for Custom Route Mode */}
           {mode === 'customRoute' && (
             <div className="planning-section">
               <h3 className="planning-section-title">
@@ -285,7 +391,8 @@ const PlanningPage = ({
                 <span>Route Points</span>
               </h3>
               
-              <div className="planning-route-points">                <button
+              <div className="planning-route-points">
+                <button
                   type="button"
                   onClick={() => {
                     setActivePointSelector('start');
@@ -316,7 +423,9 @@ const PlanningPage = ({
                     <div className="planning-route-dot"></div>
                     <div className="planning-route-dot"></div>
                   </div>
-                </div>                <button
+                </div>
+
+                <button
                   type="button"
                   onClick={() => {
                     setActivePointSelector('end');
@@ -477,15 +586,8 @@ const PlanningPage = ({
         }}
         setStartPoint={setStartPoint}
         setEndPoint={setEndPoint}
-        setCenter={setCenter}
-        activePointSelector={activePointSelector}
-      />      {/* Location Prompt - Shown for Custom Route Mode */}
-      {mode === 'customRoute' && showLocationPrompt && (
-        <LocationPrompt
-          onLocationUpdate={handleLocationUpdate}
-          onDismiss={handleLocationPromptDismiss}
-        />
-      )}
+        setCenter={setCenter}        activePointSelector={activePointSelector}
+      />
     </div>
   );
 };

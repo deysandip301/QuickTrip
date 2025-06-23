@@ -191,8 +191,7 @@ const filterAndProcessPlaces = (rawPlaces) => {
         } else if (place.types.includes('place_of_worship')) {
           estimatedVisitDuration = 15; // Reduced from 20 to 15 minutes for temples/churches
         }
-        
-        uniquePlaces.set(place.place_id, {
+          uniquePlaces.set(place.place_id, {
           placeId: place.place_id,
           name: place.name,
           location: place.geometry.location,
@@ -201,7 +200,17 @@ const filterAndProcessPlaces = (rawPlaces) => {
           types: place.types,
           estimatedCost: estimatedCost,
           estimatedVisitDuration: estimatedVisitDuration,
-          vicinity: place.vicinity || place.formatted_address || '',
+          vicinity: place.vicinity || place.formatted_address || '',          // Enhanced place details for rich UI
+          photos: place.photos ? selectBestPhotos(place.photos, 3).map(photo => ({
+            photo_reference: photo.photo_reference,
+            width: photo.width,
+            height: photo.height,
+            html_attributions: photo.html_attributions
+          })) : [],
+          price_level: place.price_level || null,
+          opening_hours: place.opening_hours || null,
+          permanently_closed: place.permanently_closed || false,
+          plus_code: place.plus_code || null
         });
         
         console.log(`✅ ACCEPTED: ${place.name} (Rating: ${place.rating}, Reviews: ${place.user_ratings_total}, Types: ${place.types.slice(0, 3).join(', ')})`);
@@ -549,30 +558,143 @@ export const searchPlacesByText = async (query, location, radius = 5000) => {
 };
 
 /**
- * Gets detailed information about a specific place.
- * @param {string} placeId - The Google Places ID.
- * @returns {Promise<Object>} Detailed place information.
+ * Fetches detailed information for a place including photos and description
+ * @param {string} placeId - Google Place ID
+ * @returns {Promise<Object>} Enhanced place details
  */
 export const getPlaceDetails = async (placeId) => {
   try {
+    if (!API_KEY) {
+      console.warn('⚠️ No API key found, returning basic details');
+      return null;
+    }
+
     const result = await client.placeDetails({
       params: {
         place_id: placeId,
-        fields: ['name', 'formatted_address', 'geometry', 'rating', 'user_ratings_total', 'types', 'price_level', 'opening_hours', 'photos'],
+        fields: [
+          'place_id', 'name', 'formatted_address', 'geometry',
+          'rating', 'user_ratings_total', 'photos', 'types',
+          'price_level', 'opening_hours', 'website', 'formatted_phone_number',
+          'reviews', 'editorial_summary', 'plus_code'
+        ].join(','),
         key: API_KEY,
       },
     });
-    
+
     if (result.data.status === 'OK') {
-      return result.data.result;
-    } else {
-      console.error('Place details API error:', result.data.status);
-      return null;
+      const place = result.data.result;
+      return {
+        placeId: place.place_id,
+        name: place.name,
+        formatted_address: place.formatted_address,
+        location: place.geometry?.location,
+        rating: place.rating,
+        user_ratings_total: place.user_ratings_total,        photos: place.photos ? selectBestPhotos(place.photos, 5).map(photo => ({
+          photo_reference: photo.photo_reference,
+          width: photo.width,
+          height: photo.height,
+          html_attributions: photo.html_attributions,
+          // Generate photo URL with higher quality
+          url: `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${API_KEY}`
+        })) : [],
+        types: place.types,
+        price_level: place.price_level,
+        opening_hours: place.opening_hours,
+        website: place.website,
+        phone: place.formatted_phone_number,        reviews: place.reviews ? place.reviews
+          .sort((a, b) => b.rating - a.rating) // Sort by rating (highest first)
+          .slice(0, 3)
+          .map(review => ({
+            author_name: review.author_name,
+            rating: review.rating,
+            text: review.text,
+            time: review.time,
+            relative_time_description: review.relative_time_description
+          })) : [],
+        editorial_summary: place.editorial_summary?.overview || null,
+        plus_code: place.plus_code
+      };
     }
+
+    return null;
   } catch (error) {
-    console.error('Error in getPlaceDetails:', error);
+    console.error('Error fetching place details:', error);
     return null;
   }
+};
+
+/**
+ * Generates photo URLs for place photos
+ * @param {string} photoReference - Google Photos API reference
+ * @param {number} maxWidth - Maximum width of the photo
+ * @returns {string} Photo URL
+ */
+export const getPhotoUrl = (photoReference, maxWidth = 400) => {
+  if (!API_KEY || !photoReference) return null;
+  return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxWidth}&photo_reference=${photoReference}&key=${API_KEY}`;
+};
+
+/**
+ * Intelligently selects and sorts the best photos for a place
+ * @param {Array} photos - Array of photo objects from Google Places API
+ * @param {number} maxPhotos - Maximum number of photos to return
+ * @returns {Array} Sorted array of best photos
+ */
+const selectBestPhotos = (photos, maxPhotos = 5) => {
+  if (!photos || photos.length === 0) return [];
+  
+  // Score each photo based on various quality indicators
+  const scoredPhotos = photos.map(photo => {
+    let score = 0;
+    
+    // Higher resolution gets more points
+    const totalPixels = photo.width * photo.height;
+    if (totalPixels > 1000000) score += 50; // > 1MP
+    else if (totalPixels > 500000) score += 30; // > 0.5MP
+    else if (totalPixels > 100000) score += 10; // > 0.1MP
+    
+    // Prefer landscape orientation for better display (16:9, 4:3, etc.)
+    const aspectRatio = photo.width / photo.height;
+    if (aspectRatio >= 1.3 && aspectRatio <= 2.0) score += 20; // Good landscape ratios
+    else if (aspectRatio >= 0.7 && aspectRatio <= 1.3) score += 15; // Square-ish
+    else score -= 10; // Very tall or very wide
+    
+    // Prefer larger images (better quality potential)
+    if (photo.width >= 1200 || photo.height >= 900) score += 25;
+    else if (photo.width >= 800 || photo.height >= 600) score += 15;
+    else if (photo.width >= 400 || photo.height >= 300) score += 5;
+    
+    // Bonus for photos that aren't too small
+    if (photo.width >= 300 && photo.height >= 200) score += 10;
+    
+    // Small penalty for very small images
+    if (photo.width < 200 || photo.height < 150) score -= 20;
+    
+    // Check attributions for quality indicators
+    if (photo.html_attributions && photo.html_attributions.length > 0) {
+      const attribution = photo.html_attributions[0].toLowerCase();
+      // Prefer photos from the business owner or official sources
+      if (attribution.includes('owner') || attribution.includes('business')) score += 15;
+      // Prefer photos from users with more engagement (rough heuristic)
+      if (attribution.includes('google user')) score += 5;
+    }
+    
+    return {
+      ...photo,
+      qualityScore: score
+    };
+  });
+  
+  // Sort by quality score (highest first) and take the best ones
+  return scoredPhotos
+    .sort((a, b) => b.qualityScore - a.qualityScore)
+    .slice(0, maxPhotos)
+    .map(photo => {
+      // Remove the quality score before returning
+      const { qualityScore, ...cleanPhoto } = photo;
+      return cleanPhoto;
+    });
 };
 
 /**

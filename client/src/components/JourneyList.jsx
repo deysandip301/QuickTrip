@@ -1,10 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { generateMapsFallbackLinks } from '../services/apiService';
-import { formatTravelTime, parseDuration } from '../utils/timeUtils';
+import { formatTravelTime, parseDuration, formatDistance, parseDistance } from '../utils/timeUtils';
+import PlaceCard from './PlaceCard';
 import './JourneyList.css';
 import './JourneyResultPage.css';
 
-const JourneyList = ({ journey, loading, error }) => {  if (loading) {
+const JourneyList = ({ journey, loading, error }) => {
+  const [expandedPlaces, setExpandedPlaces] = useState(new Set());
+
+  const togglePlaceExpansion = (placeId) => {
+    setExpandedPlaces(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(placeId)) {
+        newSet.delete(placeId);
+      } else {
+        newSet.add(placeId);
+      }
+      return newSet;
+    });
+  };  if (loading) {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
@@ -76,30 +90,9 @@ const JourneyList = ({ journey, loading, error }) => {  if (loading) {
     .reduce((sum, item) => sum + parseDuration(item.duration), 0);
   
   const formattedTotalDuration = formatTravelTime(totalDuration);
-
   // Generate Google Maps links
   const mapLinks = generateMapsFallbackLinks(journey);
 
-  const getPlaceIcon = (types) => {
-    if (types.includes('cafe') || types.includes('restaurant')) return '☕';
-    if (types.includes('park')) return '🌳';
-    if (types.includes('museum')) return '🏛️';
-    if (types.includes('art_gallery')) return '🎨';
-    if (types.includes('tourist_attraction')) return '🏰';
-    return '📍';
-  };
-  const getPlaceColor = (index, types) => {
-    if (index === 0) return 'journey-place-start';
-    if (index === stops.length - 1) return 'journey-place-end';
-    
-    if (types.includes('cafe') || types.includes('restaurant')) return 'journey-place-restaurant';
-    if (types.includes('park')) return 'journey-place-park';
-    if (types.includes('museum')) return 'journey-place-museum';
-    if (types.includes('art_gallery')) return 'journey-place-gallery';
-    if (types.includes('tourist_attraction')) return 'journey-place-attraction';
-    
-    return 'journey-place-default';
-  };
   return (
     <div className="journey-list">
       <div className="journey-header">
@@ -137,82 +130,19 @@ const JourneyList = ({ journey, loading, error }) => {  if (loading) {
                   </svg>
                 </div>                <div className="journey-travel-content">
                   <p className="journey-travel-text">
-                    🚗 {formatTravelTime(item.duration)} • {item.distance}
+                    🚗 {formatTravelTime(item.duration)} • {formatDistance(parseDistance(item.distance))}
                   </p>
                 </div>
-              </div>
-            ) : (              <div className={`journey-place ${getPlaceColor(stops.indexOf(item), item.types || [])}`}>
-                <div className="journey-place-content">
-                  <div className="journey-place-icon">
-                    {getPlaceIcon(item.types || [])}
-                  </div>
-                  <div className="journey-place-details">
-                    <div className="journey-place-header">
-                      <h3 className="journey-place-name">
-                        {item.name}
-                        {stops.indexOf(item) === 0 && <span className="journey-place-badge start">Start</span>}
-                        {stops.indexOf(item) === stops.length - 1 && <span className="journey-place-badge end">End</span>}
-                      </h3>
-                      {mapLinks && mapLinks.locationLinks && (
-                        <a
-                          href={mapLinks.locationLinks[stops.indexOf(item)]?.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="journey-place-map-btn"
-                          title="View on Google Maps"
-                        >
-                          📍
-                        </a>
-                      )}
-                    </div>
-                    <div className="journey-place-meta">
-                      {item.rating && (
-                        <div className="journey-place-rating">
-                          <span className="journey-place-rating-icon">⭐</span>
-                          <span className="journey-place-rating-value">{item.rating}</span>
-                        </div>
-                      )}
-                      {item.estimatedVisitDuration && (
-                        <div className="journey-place-duration">
-                          <span className="journey-place-duration-icon">⏰</span>
-                          <span className="journey-place-duration-value">{item.estimatedVisitDuration}min</span>
-                        </div>
-                      )}
-                    </div>                    {item.vicinity && (
-                      <a 
-                        href={`https://www.google.com/maps/search/?api=1&query=${item.location.lat},${item.location.lng}${item.placeId ? `&query_place_id=${item.placeId}` : ''}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="journey-place-vicinity-link"
-                        title="Click to view exact location on Google Maps"
-                      >
-                        <p className="journey-place-vicinity">{item.vicinity}</p>
-                      </a>
-                    )}
-                    
-                    {/* Enhanced Location Information */}
-                    {item.location && (
-                      <div className="journey-location-info">
-                        <span className="journey-location-label">📍 Location:</span>
-                        <span className="journey-location-coords">
-                          {item.location.lat.toFixed(6)}, {item.location.lng.toFixed(6)}
-                        </span>                        <a 
-                          href={`https://www.google.com/maps/search/?api=1&query=${item.location.lat},${item.location.lng}${item.placeId ? `&query_place_id=${item.placeId}` : ''}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="journey-location-link"
-                        >
-                          View on Maps
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+              </div>            ) : (
+              <PlaceCard 
+                place={item}
+                isExpanded={expandedPlaces.has(item.placeId)}
+                onToggleExpand={togglePlaceExpansion}
+              />
             )}
           </div>
         ))}
-      </div>      {/* Quick Actions Footer */}
+      </div>{/* Quick Actions Footer */}
       {mapLinks && (
         <div className="journey-footer">
           <div className="journey-footer-title">External Links</div>

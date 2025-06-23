@@ -51,10 +51,9 @@ export function createMockDistanceMatrix(places) {
     elements: places.map(destination => {
       const distance = calculateDistance(origin.location, destination.location);
       const duration = estimateTravelTime(distance);
-      
-      return {
+        return {
         distance: {
-          text: `${(distance / 1000).toFixed(1)} km`,
+          text: `${(distance / 1000).toFixed(2).replace(/\.?0+$/, '')} km`,
           value: Math.round(distance)
         },
         duration: {
