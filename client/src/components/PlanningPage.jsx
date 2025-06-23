@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { tripJourney } from '../services/apiService';
 import MapPointSelectorModal from '../components/MapPointSelectorModal';
+import LocationPrompt from '../components/LocationPrompt';
+import { getCurrentLocation as getDeviceLocation, isGeolocationSupported } from '../utils/geolocation';
+import '../components/LocationPrompt.css';
 // CSS imported in App.jsx
 
 // Utility function to calculate distance between two points in kilometers
@@ -34,10 +37,11 @@ const PlanningPage = ({
     tourist_attraction: true
   });  const [duration, setDuration] = useState(360); // Increased default to 6 hours
   const [budget, setBudget] = useState(200); // Increased default budget
-  const [startPoint, setStartPoint] = useState(null);
-  const [endPoint, setEndPoint] = useState(null);
+  const [startPoint, setStartPoint] = useState(null);  const [endPoint, setEndPoint] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activePointSelector, setActivePointSelector] = useState(null); // 'start' or 'end'
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [locationDetected, setLocationDetected] = useState(false);
   const preferenceOptions = [
     { key: 'cafe', label: 'Cafés & Restaurants', icon: '☕' },
     { key: 'park', label: 'Parks & Nature', icon: '🌳' },
@@ -128,45 +132,74 @@ const PlanningPage = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const getCurrentLocation = async () => {
-    if (navigator.geolocation) {
+  };  const getCurrentLocation = async () => {
+    try {
+      const locationData = await getDeviceLocation({
+        timeout: 10000,
+        enableHighAccuracy: true,
+        maximumAge: 300000
+      });
+      
+      const { lat, lng } = locationData;
+      
+      // Update map center
+      setCenter({ lat, lng });
+      setLocationDetected(true);
+      
+      // Reverse geocode to get address
       try {
-        const position = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            timeout: 10000,
-            enableHighAccuracy: true,
-            maximumAge: 300000
-          });
-        });
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
+        );
+        const data = await response.json();
         
-        const { latitude, longitude } = position.coords;
-        
-        // Reverse geocode to get address
-        try {
-          const response = await fetch(
-            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
-          );
-          const data = await response.json();
-          
-          if (data.results && data.results.length > 0) {
-            setLocation(data.results[0].formatted_address);
-          } else {
-            setLocation(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
-          }
-        } catch (error) {
-          console.error('Reverse geocoding failed:', error);
-          setLocation(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+        if (data.results && data.results.length > 0) {
+          setLocation(data.results[0].formatted_address);
+        } else {
+          setLocation(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
         }
       } catch (error) {
-        console.error('Error getting location:', error);
-        setError('Could not get your location. Please enter manually or check location permissions.');
+        console.error('Reverse geocoding failed:', error);
+        setLocation(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
       }
-    } else {
-      setError('Geolocation is not supported by this browser.');
+    } catch (error) {
+      console.error('Error getting location:', error);
+      setError('Could not get your location. Please enter manually or check location permissions.');
     }
   };
+
+  // Check for location support and prompt user when custom route is selected
+  useEffect(() => {
+    if (mode === 'customRoute' && isGeolocationSupported() && !locationDetected) {
+      // Small delay to let the page render before showing prompt
+      const timer = setTimeout(() => {
+        setShowLocationPrompt(true);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [mode, locationDetected]);
+
+  // Handle location update from prompt or direct detection
+  const handleLocationUpdate = (locationData) => {
+    setLocationDetected(true);
+    setShowLocationPrompt(false);
+    
+    // Update the map center with detected location
+    setCenter({
+      lat: locationData.lat,
+      lng: locationData.lng
+    });
+    
+    console.log('📍 Location updated for map centering');
+  };
+
+  // Handle location prompt dismissal
+  const handleLocationPromptDismiss = () => {
+    setShowLocationPrompt(false);
+    setLocationDetected(true); // Mark as handled to prevent showing again
+  };
+
   return (
     <div className="planning-container">
       {/* Header */}
@@ -446,7 +479,13 @@ const PlanningPage = ({
         setEndPoint={setEndPoint}
         setCenter={setCenter}
         activePointSelector={activePointSelector}
-      />
+      />      {/* Location Prompt - Shown for Custom Route Mode */}
+      {mode === 'customRoute' && showLocationPrompt && (
+        <LocationPrompt
+          onLocationUpdate={handleLocationUpdate}
+          onDismiss={handleLocationPromptDismiss}
+        />
+      )}
     </div>
   );
 };

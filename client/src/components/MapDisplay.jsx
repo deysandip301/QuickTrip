@@ -421,10 +421,22 @@ const MapDisplay = ({ journey, center }) => {
         </div>
       </div>
     );
-  }  return (
+  }  // Calculate smart center: use provided center, or first journey location, or default
+  const getMapCenter = () => {
+    if (center) return center;
+    
+    if (journey && journey.length > 0) {
+      const firstLocation = journey.find(item => !item.isTravelLeg && item.location);
+      if (firstLocation) return firstLocation.location;
+    }
+    
+    return { lat: 12.9716, lng: 77.5946 }; // Default to Bangalore
+  };
+
+  return (
     <Map
       zoom={13}
-      center={center || { lat: 12.9716, lng: 77.5946 }} // Default to Bangalore
+      center={getMapCenter()}
       mapId="quicktrip-map"
       className="w-full h-full"
       style={{ 

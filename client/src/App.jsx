@@ -8,6 +8,7 @@ import Footer from './components/Footer';
 import { APIProvider } from '@vis.gl/react-google-maps';
 import { saveJourney, onAuthChange } from './services/firebase';
 import AuthPage from './components/AuthPage';
+import { getSmartLocation } from './utils/geolocation';
 
 // Import all component CSS files
 import './components/AuthPage.css';
@@ -70,9 +71,42 @@ function App() {
   const [currentPage, setCurrentPage] = useState('home'); // 'home', 'planning', 'result', 'saved'
   const [journeyMode, setJourneyMode] = useState(null); // 'currentLocation' or 'customRoute'
   const [journey, setJourney] = useState([]);
-  const [center, setCenter] = useState({ lat: 12.9716, lng: 77.5946 });
-  const [loading, setLoading] = useState(false);  const [error, setError] = useState('');
+  const [center, setCenter] = useState({ lat: 12.9716, lng: 77.5946 }); // Default to Bangalore
+  const [locationLoading, setLocationLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [savedJourneySummary, setSavedJourneySummary] = useState(null); // For displaying saved journey stats
+
+  // Initialize user location on app start
+  useEffect(() => {
+    const initializeLocation = async () => {
+      try {
+        setLocationLoading(true);
+        const locationData = await getSmartLocation({
+          timeout: 8000, // 8 second timeout
+          maximumAge: 600000 // 10 minutes cache
+        });
+        
+        setCenter({
+          lat: locationData.lat,
+          lng: locationData.lng
+        });
+        
+        if (locationData.success) {
+          console.log('✅ Location detected:', locationData.city || 'Current Location');
+        } else {
+          console.log('📍 Using fallback location:', locationData.city);
+        }
+      } catch (error) {
+        console.warn('❌ Location detection failed, using default:', error);
+        // Keep default Bangalore coordinates
+      } finally {
+        setLocationLoading(false);
+      }
+    };
+
+    initializeLocation();
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthChange((user) => {
