@@ -17,14 +17,6 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// Debug: Log configuration (remove in production)
-console.log('Firebase Config Debug:', {
-  hasApiKey: !!firebaseConfig.apiKey,
-  hasProjectId: !!firebaseConfig.projectId,
-  apiKeyLength: firebaseConfig.apiKey?.length,
-  projectId: firebaseConfig.projectId
-});
-
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -32,32 +24,15 @@ const auth = getAuth(app);
 
 // Validate Firebase configuration
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-  console.error('Firebase configuration is incomplete. Check your .env file.');
-  console.error('Missing:', {
-    apiKey: !firebaseConfig.apiKey,
-    projectId: !firebaseConfig.projectId
-  });
+  console.error('Firebase configuration is incomplete.');
 }
 
 export const signUp = (email, password) => {
   return createUserWithEmailAndPassword(auth, email, password);
 };
 
-export const signIn = async (email, password) => {
-  try {
-    console.log('Attempting sign in with Firebase...');
-    const result = await signInWithEmailAndPassword(auth, email, password);
-    console.log('Sign in successful:', result.user.uid);
-    return result;
-  } catch (error) {
-    console.error('Firebase sign in error:', {
-      code: error.code,
-      message: error.message,
-      apiKeyPresent: !!import.meta.env.VITE_FIREBASE_API_KEY,
-      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID
-    });
-    throw error;
-  }
+export const signIn = (email, password) => {
+  return signInWithEmailAndPassword(auth, email, password);
 };
 
 export const handleSignOut = () => {
