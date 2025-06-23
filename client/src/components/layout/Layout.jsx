@@ -23,8 +23,6 @@ import '../../components/ui/LocationPrompt.css';
 import './Header.css';
 import './Footer.css';
 import '../../App.css';
-import './Footer.css';
-import '../../App.css';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
@@ -91,8 +89,7 @@ const Layout = () => {
         }
 
         // Load center
-        const savedCenter = sessionStorage.getItem(STORAGE_KEYS.CENTER);
-        if (savedCenter) {
+        const savedCenter = sessionStorage.getItem(STORAGE_KEYS.CENTER);        if (savedCenter) {
           setCenter(JSON.parse(savedCenter));
         }
 
@@ -101,8 +98,8 @@ const Layout = () => {
         if (savedSummary) {
           setSavedJourneySummary(JSON.parse(savedSummary));
         }
-      } catch (error) {
-        console.warn('Failed to load persisted state:', error);
+      } catch {
+        // Failed to load persisted state
       }
     };
 
@@ -134,17 +131,10 @@ const Layout = () => {
           timeout: 8000,
           maximumAge: 600000
         });
-        
-        setCenter({
+          setCenter({
           lat: locationData.lat,
           lng: locationData.lng
         });
-        
-        if (locationData.success) {
-          console.log('✅ Location detected:', locationData.city || 'Current Location');
-        } else {
-          console.log('📍 Using fallback location:', locationData.city);
-        }
       } catch (error) {
         console.warn('❌ Location detection failed, using default:', error);
       }

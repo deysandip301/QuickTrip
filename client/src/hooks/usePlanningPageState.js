@@ -9,12 +9,10 @@ export const usePlanningPageState = (initialState) => {
 
   // Load saved state on initialization
   const loadSavedState = useCallback(() => {
-    const savedState = loadPageState(planningPath);
-    if (savedState && savedState.timestamp) {
+    const savedState = loadPageState(planningPath);    if (savedState && savedState.timestamp) {
       // Only load state if it's recent (within last hour)
       const hourAgo = Date.now() - (60 * 60 * 1000);
       if (savedState.timestamp > hourAgo) {
-        console.log('🔄 Restoring planning page state:', savedState);
         return { ...initialState, ...savedState };
       }
     }

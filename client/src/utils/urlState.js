@@ -16,13 +16,11 @@ export const compressJourneyData = (journeyData) => {
         // Only include photos/reviews reference for size optimization
         ph: item.photos?.length || 0,
         rv: item.reviews?.length || 0
-      })),
-      c: journeyData.center,
+      })),      c: journeyData.center,
       s: journeyData.summary
     };
     return btoa(JSON.stringify(compressed));
-  } catch (error) {
-    console.warn('Failed to compress journey data:', error);
+  } catch {
     return null;
   }
 };
@@ -43,10 +41,8 @@ export const decompressJourneyData = (compressedData) => {
         reviews: []
       })) || [],
       center: compressed.c,
-      summary: compressed.s
-    };
-  } catch (error) {
-    console.warn('Failed to decompress journey data:', error);
+      summary: compressed.s    };
+  } catch {
     return null;
   }
 };
@@ -75,11 +71,9 @@ export const loadJourneyFromUrl = (searchParams) => {
   }
   
   // Fallback to session storage
-  try {
-    const stored = sessionStorage.getItem('quicktrip_current_journey_full');
+  try {    const stored = sessionStorage.getItem('quicktrip_current_journey_full');
     return stored ? JSON.parse(stored) : null;
-  } catch (error) {
-    console.warn('Failed to load journey from storage:', error);
+  } catch {
     return null;
   }
 };

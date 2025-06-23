@@ -456,12 +456,10 @@ const MapDisplay = ({ journey, center }) => {
         keyboardShortcuts: true,
         disableDoubleClickZoom: false
       }}
-      onError={(error) => {
-        console.error('Map error:', error);
+      onError={(error) => {        console.error('Map error:', error);
         setMapError(true);
-      }}
-      onLoad={(map) => {
-        console.log('Map loaded successfully!', map);
+      }}      onLoad={() => {
+        // Map loaded successfully
       }}
     >      {stops.map((stop, index) => (
         <AdvancedMarker

@@ -32,21 +32,17 @@ export const savePageState = (pagePath, state) => {
     // Keep only last 5 pages in history
     if (history.length > 5) {
       history.splice(0, history.length - 5);
-    }
-    
-    sessionStorage.setItem(STORAGE_KEYS.NAVIGATION_HISTORY, JSON.stringify(history));
-  } catch (error) {
-    console.warn('Failed to save page state:', error);
+    }    sessionStorage.setItem(STORAGE_KEYS.NAVIGATION_HISTORY, JSON.stringify(history));
+  } catch {
+    // Failed to save page state
   }
 };
 
 // Load page state
 export const loadPageState = (pagePath) => {
-  try {
-    const saved = sessionStorage.getItem(`${STORAGE_KEYS.PLANNING_STATE}_${pagePath}`);
+  try {    const saved = sessionStorage.getItem(`${STORAGE_KEYS.PLANNING_STATE}_${pagePath}`);
     return saved ? JSON.parse(saved) : null;
-  } catch (error) {
-    console.warn('Failed to load page state:', error);
+  } catch {
     return null;
   }
 };
@@ -78,9 +74,8 @@ export const getPreviousPageState = (currentPath) => {
 // Clear page state
 export const clearPageState = (pagePath) => {
   try {
-    sessionStorage.removeItem(`${STORAGE_KEYS.PLANNING_STATE}_${pagePath}`);
-  } catch (error) {
-    console.warn('Failed to clear page state:', error);
+    sessionStorage.removeItem(`${STORAGE_KEYS.PLANNING_STATE}_${pagePath}`);  } catch {
+    // Failed to clear page state
   }
 };
 
@@ -96,9 +91,8 @@ export const clearAllState = () => {
       const key = sessionStorage.key(i);
       if (key && key.startsWith('quicktrip_planning_state_')) {
         sessionStorage.removeItem(key);
-      }
-    }
-  } catch (error) {
-    console.warn('Failed to clear all state:', error);
+      }    }
+  } catch {
+    // Failed to clear all state
   }
 };
